@@ -1,0 +1,66 @@
+---
+description: Follow 2-space indentation and camelCase naming. Use Next.js with TypeScript and Prisma. Prefer React hooks for state management and API routes for backend logic. Document all components and functions with JSDoc. Write unit tests with Jest for critical logic. Always include TypeScript type definitions. For Next.js, organize components in a `components` folder and use API routes effectively. Use Shadcn UI components for a consistent, accessible interface. I often need help with API routes and database queries.
+globs: *.ts,*.tsx,src/**/*/*.ts,src/**/*/*.tsx,src/config/**/*.json,*.test.ts,*.test.tsx
+alwaysApply: false
+---
+
+# Subscription App Rules
+
+This file contains project-specific rules for the SUBSCRIPTION_APP project. These rules ensure the AI follows our coding standards, project structure, and business logic while assisting with development.
+
+## Coding Standards
+- **Indentation:** Use 2-space indentation for all code files (e.g., `.ts`, `.tsx`, `.json`).
+- **Naming Conventions:** Use camelCase for variables, functions, components, and file names.
+- **TypeScript:** Define types or interfaces for all variables, function parameters, return values, and components. Avoid using `any`.
+- **Components:** Write functional components with React hooks (e.g., `useState`, `useEffect`). Do not use class components.
+
+## Project Structure
+- **File Organization:**
+  - Components go in `src/components/`.
+  - API routes go in `src/pages/api/`.
+  - Utility functions go in `src/utils/`.
+  - Pages go in `src/pages/`.
+- **Database:** Use Prisma for database operations. Define all models in `prisma/schema.prisma`.
+- **Configuration Files:** Store global configs in `src/config/` (e.g., `database.ts`).
+
+## Business Logic
+- **Subscriptions:**
+  - Store subscription details (e.g., service name, trial start/end dates, cost) in the database via Prisma.
+  - Use TypeScript interfaces to type subscription data (e.g., `interface Subscription { id: number; name: string; trialEnds: Date; }`).
+- **Reminders:**
+  - Schedule reminders for trial endings using a cron job (e.g., `node-cron`) or a similar library.
+  - Send reminders via email using a service like SendGrid or Nodemailer.
+- **Cancellations:**
+  - For known services, include cancellation steps in the database or a static file.
+  - For unknown services, prompt users to input cancellation instructions.
+
+## API Routes
+- Use Next.js API routes in `src/pages/api/` for backend logic.
+- Type all request and response data with TypeScript.
+- Return JSON responses with consistent structure (e.g., `{ success: boolean, data: any, error?: string }`).
+
+## UI and Accessibility
+- **Components:** Use Shadcn UI components for a consistent and accessible interface.
+- **Standards:** Follow WCAG 2.1 AA guidelines (e.g., add `aria-label` attributes, ensure keyboard navigation works).
+
+## Testing
+- Write unit tests for key logic (e.g., subscription calculations, reminder scheduling) using Jest.
+- Test API routes to verify they handle success and error cases.
+- Use React Testing Library for component tests.
+
+## Performance
+- Use Next.js `getServerSideProps` or `getStaticProps` for data fetching, depending on the page’s needs.
+- Optimize images with Next.js’s `Image` component.
+
+## Security
+- Store sensitive data (e.g., API keys, database URLs) in `.env` files and access them via `process.env`.
+- Validate all user inputs to prevent injection attacks (e.g., use a library like `zod` for schema validation).
+
+## Deployment
+- Deploy to Vercel.
+- Ensure all environment variables are set in Vercel’s dashboard.
+
+## Referenced Files
+- @ src/config/database.ts (Database connection setup)
+- @ src/components/SubscriptionCard.tsx (Example component)
+- @ Test.ts (Testing guidelines)

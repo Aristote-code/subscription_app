@@ -43,9 +43,33 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Plus, X, Pencil, Save, ExternalLink } from "lucide-react";
+import {
+  Search,
+  Plus,
+  X,
+  Pencil,
+  Save,
+  ExternalLink,
+  CalendarIcon,
+  PlusCircle,
+  Trash,
+} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Define the Subscription interface
+interface Reminder {
+  id: string;
+  date: string | Date;
+  sent: boolean;
+  subscriptionId: string;
+}
+
 interface Subscription {
   id: string;
   name: string;
@@ -56,21 +80,34 @@ interface Subscription {
   billingCycle: string;
   status: string;
   cancellationUrl?: string;
+  reminders?: Reminder[];
 }
 
 /**
  * Dashboard page component for displaying user's subscriptions
  */
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+
   // State
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubscription, setSelectedSubscription] =
     useState<Subscription | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [editForm, setEditForm] = useState<Subscription | null>(null);
+  const [reminderEnabled, setReminderEnabled] = useState(true);
+
+  // New state variables for reminder management
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [newReminderDate, setNewReminderDate] = useState<Date | undefined>(
+    undefined
+  );
+  const [isAddingReminder, setIsAddingReminder] = useState(false);
+  const [reminderError, setReminderError] = useState<string | null>(null);
 
   // Sample cancellation instructions
   const cancellationInstructions = {
@@ -91,48 +128,47 @@ export default function DashboardPage() {
     ],
   };
 
-  // Mock data
+  // Initialize search term from URL params
   useEffect(() => {
-    const mockData: Subscription[] = [
-      {
-        id: "1",
-        name: "Netflix",
-        description: "Streaming service",
-        trialStartDate: new Date(2023, 5, 1),
-        trialEndDate: new Date(2023, 6, 1),
-        cost: 15.99,
-        billingCycle: "monthly",
-        status: "active",
-        cancellationUrl: "https://netflix.com/cancel",
-      },
-      {
-        id: "2",
-        name: "Spotify",
-        description: "Music streaming",
-        trialStartDate: new Date(2023, 5, 15),
-        trialEndDate: new Date(2023, 6, 15),
-        cost: 9.99,
-        billingCycle: "monthly",
-        status: "ending soon",
-        cancellationUrl: "https://spotify.com/account",
-      },
-      {
-        id: "3",
-        name: "Disney+",
-        description: "Streaming service",
-        trialStartDate: new Date(2023, 4, 1),
-        trialEndDate: new Date(2023, 5, 1),
-        cost: 7.99,
-        billingCycle: "monthly",
-        status: "expired",
-        cancellationUrl: "https://disneyplus.com/account",
-      },
-    ];
+    const query = searchParams.get("q");
+    if (query) {
+      setSearchTerm(query);
+    }
+  }, [searchParams]);
 
-    setTimeout(() => {
-      setSubscriptions(mockData);
-      setIsLoading(false);
-    }, 1000);
+  // Fetch subscriptions data from API
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/subscriptions");
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setSubscriptions(data.data);
+        } else {
+          throw new Error(data.error || "Failed to fetch subscriptions");
+        }
+      } catch (err) {
+        console.error("Failed to fetch subscriptions:", err);
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred"
+        );
+        // Set empty array to allow the app to function even with an error
+        setSubscriptions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSubscriptions();
   }, []);
 
   /**
@@ -202,6 +238,7 @@ export default function DashboardPage() {
     setSelectedSubscription(subscription);
     setEditForm({ ...subscription });
     setIsDrawerOpen(true);
+    fetchReminders(subscription.id);
   };
 
   // Handle edit form change
@@ -215,17 +252,42 @@ export default function DashboardPage() {
   };
 
   // Handle save changes
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (editForm) {
-      // Update subscription in the list
-      const updatedSubscriptions = subscriptions.map((sub) =>
-        sub.id === editForm.id ? editForm : sub
-      );
-      setSubscriptions(updatedSubscriptions);
-      setSelectedSubscription(editForm);
+      try {
+        const response = await fetch(`/api/subscriptions/${editForm.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editForm),
+        });
 
-      // Show success toast
-      toast.success("Subscription updated successfully");
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Update subscription in the list
+          const updatedSubscriptions = subscriptions.map((sub) =>
+            sub.id === editForm.id ? data.data : sub
+          );
+          setSubscriptions(updatedSubscriptions);
+          setSelectedSubscription(data.data);
+
+          // Show success toast
+          toast.success("Subscription updated successfully");
+        } else {
+          throw new Error(data.error || "Failed to update subscription");
+        }
+      } catch (err) {
+        console.error("Failed to update subscription:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Failed to update subscription"
+        );
+      }
     }
   };
 
@@ -234,35 +296,111 @@ export default function DashboardPage() {
     sub.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Fetch reminders for selected subscription
+  const fetchReminders = async (subscriptionId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `/api/reminders?subscriptionId=${subscriptionId}`
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setReminders(data.data);
+      } else {
+        setReminderError(data.error || "Failed to fetch reminders");
+      }
+    } catch (error) {
+      setReminderError("Failed to fetch reminders. Please try again.");
+      console.error("Error fetching reminders:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add a new reminder
+  const handleAddReminder = async () => {
+    if (!selectedSubscription || !newReminderDate) {
+      setReminderError("Please select a date for the reminder");
+      return;
+    }
+
+    try {
+      setIsAddingReminder(true);
+
+      const response = await fetch("/api/reminders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId: selectedSubscription.id,
+          date: newReminderDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setReminders([...reminders, data.data]);
+        setNewReminderDate(undefined);
+        setReminderError(null);
+      } else {
+        setReminderError(data.error || "Failed to add reminder");
+      }
+    } catch (error) {
+      setReminderError("Failed to add reminder. Please try again.");
+      console.error("Error adding reminder:", error);
+    } finally {
+      setIsAddingReminder(false);
+    }
+  };
+
+  // Delete a reminder
+  const handleDeleteReminder = async (reminderId: string) => {
+    try {
+      const response = await fetch(`/api/reminders/${reminderId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setReminders(reminders.filter((r) => r.id !== reminderId));
+      } else {
+        setReminderError(data.error || "Failed to delete reminder");
+      }
+    } catch (error) {
+      setReminderError("Failed to delete reminder. Please try again.");
+      console.error("Error deleting reminder:", error);
+    }
+  };
+
   return (
     <div>
       {/* Dashboard Content */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold">Your Subscriptions</h1>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-64 sm:flex-none">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search subscriptions..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button asChild className="bg-green-600 hover:bg-green-500">
-            <Link href="/add-subscription">
-              <Plus className="mr-2 h-4 w-4" />
-              Add New
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {/* Subscriptions Table */}
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
+      ) : error ? (
+        <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+          <h3 className="mb-2 text-lg font-semibold text-red-500">
+            Error loading subscriptions
+          </h3>
+          <p className="mb-6 text-sm text-muted-foreground">{error}</p>
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="bg-zinc-800 hover:bg-zinc-700 text-white"
+          >
+            Try Again
+          </Button>
         </div>
       ) : filteredSubscriptions.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
@@ -369,9 +507,10 @@ export default function DashboardPage() {
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="details">Details</TabsTrigger>
                   <TabsTrigger value="edit">Edit</TabsTrigger>
+                  <TabsTrigger value="reminders">Reminders</TabsTrigger>
                   <TabsTrigger value="cancel">Cancel</TabsTrigger>
                 </TabsList>
 
@@ -424,7 +563,18 @@ export default function DashboardPage() {
                       Reminder Settings
                     </h3>
                     <div className="flex items-center space-x-2">
-                      <Switch id="reminder" defaultChecked />
+                      <Switch
+                        id="reminder"
+                        checked={reminderEnabled}
+                        onCheckedChange={(checked) => {
+                          setReminderEnabled(checked);
+                          toast.success(
+                            checked
+                              ? "Reminder enabled for this subscription"
+                              : "Reminder disabled for this subscription"
+                          );
+                        }}
+                      />
                       <label
                         htmlFor="reminder"
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -541,6 +691,86 @@ export default function DashboardPage() {
                   </Button>
                 </TabsContent>
 
+                {/* Reminders Tab */}
+                <TabsContent value="reminders">
+                  <h3 className="text-xl font-bold mb-4">Manage Reminders</h3>
+
+                  {reminderError && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded-md mb-4">
+                      {reminderError}
+                    </div>
+                  )}
+
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-2">Add New Reminder</h4>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {newReminderDate
+                                ? format(newReminderDate, "PPP")
+                                : "Select date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={newReminderDate}
+                              onSelect={setNewReminderDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <Button
+                        onClick={handleAddReminder}
+                        disabled={isAddingReminder || !newReminderDate}
+                      >
+                        {isAddingReminder ? "Adding..." : "Add Reminder"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Scheduled Reminders</h4>
+                    {reminders.length === 0 ? (
+                      <p className="text-gray-500">No custom reminders set.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {reminders.map((reminder) => (
+                          <div
+                            key={reminder.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                          >
+                            <div>
+                              <p>
+                                {formatDate(reminder.date)}
+                                {reminder.sent && (
+                                  <Badge variant="outline" className="ml-2">
+                                    Sent
+                                  </Badge>
+                                )}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteReminder(reminder.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
                 {/* Cancel Tab */}
                 <TabsContent value="cancel" className="space-y-4 py-4">
                   <div className="rounded-md border bg-gray-800 p-4">
@@ -577,11 +807,16 @@ export default function DashboardPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              selectedSubscription.cancellationUrl || ""
-                            );
-                            toast.success("URL copied to clipboard");
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(
+                                selectedSubscription?.cancellationUrl || ""
+                              );
+                              toast.success("URL copied to clipboard");
+                            } catch (error) {
+                              console.error("Failed to copy URL:", error);
+                              toast.error("Failed to copy URL to clipboard");
+                            }
                           }}
                         >
                           Copy URL
@@ -596,9 +831,15 @@ export default function DashboardPage() {
                           className="bg-red-600 hover:bg-red-500 text-white"
                         >
                           <Link
-                            href={selectedSubscription.cancellationUrl}
+                            href={selectedSubscription?.cancellationUrl || "#"}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => {
+                              if (!selectedSubscription?.cancellationUrl) {
+                                e.preventDefault();
+                                toast.error("No cancellation URL available");
+                              }
+                            }}
                           >
                             <ExternalLink className="mr-2 h-4 w-4" />
                             Go to Cancellation Page
@@ -612,9 +853,9 @@ export default function DashboardPage() {
             </div>
 
             <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
+              <Button variant="outline" onClick={() => setIsDrawerOpen(false)}>
+                Close
+              </Button>
             </DrawerFooter>
           </div>
         </DrawerContent>

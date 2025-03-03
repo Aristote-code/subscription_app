@@ -1,36 +1,23 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { UserMenu } from "@/components/user-menu";
-import { ModeToggle } from "@/components/mode-toggle";
+"use client";
 
-export default async function DashboardLayout({
+import { getCurrentUser } from "@/lib/auth";
+import Header from "@/components/header";
+import Sidebar from "@/components/sidebar";
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">TrialGuard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <ModeToggle />
-            <UserMenu user={user} />
-          </div>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="container px-4 py-6">{children}</main>
+    <div className="flex min-h-screen bg-black text-white">
+      <Sidebar />
+      <div className="flex-1 flex flex-col pl-16">
+        <Header />
+        <main className="flex-1 p-4 overflow-auto">
+          <div className="mx-auto w-full">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

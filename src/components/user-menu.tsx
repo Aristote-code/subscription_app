@@ -58,30 +58,37 @@ export function UserMenu({ user }: UserMenuProps) {
       <DropdownMenuTrigger className="focus:outline-none" disabled={isLoading}>
         <Avatar className="h-8 w-8 cursor-pointer hover:scale-105 transition-transform">
           <AvatarImage src={user.image || ""} alt={user.name || "User"} />
-          <AvatarFallback className="bg-cyan-600 text-white">
+          <AvatarFallback className="bg-zinc-800 text-white">
             {getInitials()}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        align="end"
+        className="w-56 bg-black border border-zinc-800 text-white"
+      >
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
+            <p className="text-xs leading-none text-zinc-400">{user.email}</p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent">
+        <DropdownMenuSeparator className="bg-zinc-800" />
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
+        >
           <Link href="/dashboard">Dashboard</Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer hover:bg-accent">
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
+        >
           <Link href="/settings">Settings</Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-zinc-800" />
         <DropdownMenuItem
-          className="cursor-pointer text-red-500 hover:bg-red-600 hover:text-white focus:bg-red-600 focus:text-white"
+          className="cursor-pointer bg-black text-white hover:bg-zinc-900 focus:bg-zinc-900"
           disabled={isLoading}
           onClick={handleLogout}
         >
@@ -90,4 +97,15 @@ export function UserMenu({ user }: UserMenuProps) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+// Default export with mock user data for development
+export default function DefaultUserMenu() {
+  const mockUser = {
+    name: "Demo User",
+    email: "user@example.com",
+    image: null,
+  };
+
+  return <UserMenu user={mockUser} />;
 }

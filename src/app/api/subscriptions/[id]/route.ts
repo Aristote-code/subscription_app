@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getToken } from "next-auth/jwt";
 
 /**
  * GET handler for fetching a specific subscription
@@ -14,8 +15,17 @@ export async function GET(
   try {
     const { id } = params;
 
-    // TODO: Get user ID from authentication session
-    const userId = "mock-user-id"; // This will be replaced with actual auth
+    // Get user ID from JWT token
+    const token = await getToken({ req: request });
+
+    if (!token || !token.sub) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = token.sub;
 
     // Fetch subscription from database
     const subscription = await prisma.subscription.findUnique({
@@ -65,10 +75,20 @@ export async function PUT(
 ) {
   try {
     const { id } = params;
-    const body = await request.json();
 
-    // TODO: Get user ID from authentication session
-    const userId = "mock-user-id"; // This will be replaced with actual auth
+    // Get user ID from JWT token
+    const token = await getToken({ req: request });
+
+    if (!token || !token.sub) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = token.sub;
+
+    const body = await request.json();
 
     // Check if subscription exists and belongs to user
     const existingSubscription = await prisma.subscription.findUnique({
@@ -122,8 +142,17 @@ export async function DELETE(
   try {
     const { id } = params;
 
-    // TODO: Get user ID from authentication session
-    const userId = "mock-user-id"; // This will be replaced with actual auth
+    // Get user ID from JWT token
+    const token = await getToken({ req: request });
+
+    if (!token || !token.sub) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = token.sub;
 
     // Check if subscription exists and belongs to user
     const existingSubscription = await prisma.subscription.findUnique({

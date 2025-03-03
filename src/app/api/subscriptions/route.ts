@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { getToken } from "next-auth/jwt";
 
 /**
  * GET handler for fetching subscriptions
@@ -7,8 +9,17 @@ import { prisma } from "@/lib/prisma";
  */
 export async function GET(request: Request) {
   try {
-    // TODO: Get user ID from authentication session
-    const userId = "mock-user-id"; // This will be replaced with actual auth
+    // Get user ID from JWT token
+    const token = await getToken({ req: request });
+
+    if (!token || !token.sub) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = token.sub;
 
     // Fetch subscriptions from database
     const subscriptions = await prisma.subscription.findMany({
@@ -40,10 +51,19 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    // Get user ID from JWT token
+    const token = await getToken({ req: request });
 
-    // TODO: Get user ID from authentication session
-    const userId = "mock-user-id"; // This will be replaced with actual auth
+    if (!token || !token.sub) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const userId = token.sub;
+
+    const body = await request.json();
 
     // Validate required fields
     const { name, trialStartDate, trialEndDate, cost, billingCycle } = body;
@@ -58,9 +78,15 @@ export async function POST(request: Request) {
     // Create subscription in database
     const subscription = await prisma.subscription.create({
       data: {
-        ...body,
+        name: body.name,
+        description: body.description,
+        trialStartDate: body.trialStartDate,
+        trialEndDate: body.trialEndDate,
+        price: body.cost,
+        billingCycle: body.billingCycle,
+        cancellationUrl: body.cancellationUrl,
         userId,
-        status: "active",
+        isActive: true,
       },
     });
 

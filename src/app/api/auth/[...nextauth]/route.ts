@@ -5,10 +5,21 @@ import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { Session } from "next-auth";
 
 const prisma = new PrismaClient();
 
-export const authOptions = {
+// Extend the session type to include user id
+interface ExtendedSession extends Session {
+  user: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    id?: string | null;
+  };
+}
+
+const handler = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -66,33 +77,37 @@ export const authOptions = {
   },
   callbacks: {
     async session({ session, token, user }) {
+      const extendedSession = session as ExtendedSession;
+
       // For JWT strategy (used by credentials provider)
       if (token) {
-        session.user = {
-          ...session.user,
-          id: token.sub,
-        };
+        extendedSession.user.id = token.sub;
       }
       // For database strategy (used by OAuth providers with adapter)
       else if (user) {
-        session.user.id = user.id;
+        extendedSession.user.id = user.id;
       }
-      return session;
+      return extendedSession;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       // When signIn completes, this callback adds the user info to the token
       if (user) {
         token.id = user.id;
       }
       return token;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   session: {
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
-
-const handler = NextAuth(authOptions);
+});
 
 export { handler as GET, handler as POST };

@@ -153,7 +153,8 @@ const sendReminderEmail = async (reminder: ReminderData): Promise<void> => {
 /**
  * Format date to readable string
  */
-const formatDate = (date: Date): string => {
+const formatDate = (date: Date | null): string => {
+  if (!date) return "Unknown date";
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
@@ -164,7 +165,9 @@ const formatDate = (date: Date): string => {
 /**
  * Calculate days remaining until trial end
  */
-const getDaysRemaining = (endDate: Date): number => {
+const getDaysRemaining = (endDate: Date | null): number => {
+  if (!endDate) return 0;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const end = new Date(endDate);

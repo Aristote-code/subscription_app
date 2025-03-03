@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import SubscriptionCard from "../src/components/SubscriptionCard";
+import SubscriptionCard from "../src/components/subscriptionCard";
 
 // Mock data for testing
 const mockSubscription = {

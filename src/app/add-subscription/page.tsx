@@ -57,16 +57,54 @@ export default function AddSubscriptionPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Validate form data
+    if (!formData.name) {
+      toast.error("Please enter a subscription name");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.cost) {
+      toast.error("Please enter the subscription cost");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Prepare data for API
+    const subscriptionData = {
+      ...formData,
+      cost: parseFloat(formData.cost.toString()),
+      trialStartDate: formData.trialStartDate.toISOString(),
+      trialEndDate: formData.trialEndDate.toISOString(),
+    };
+
     try {
-      // Here we would normally send the data to the server
-      // For now, we'll just simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Send the data to the API
+      const response = await fetch("/api/subscriptions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(subscriptionData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error || "Failed to add subscription";
+        console.error("API error:", errorMessage);
+        throw new Error(errorMessage);
+      }
 
       toast.success("Subscription added successfully!");
       router.push("/dashboard");
     } catch (error) {
       console.error("Error adding subscription:", error);
-      toast.error("Failed to add subscription. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to add subscription. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

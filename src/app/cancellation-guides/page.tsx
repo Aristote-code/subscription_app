@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CancellationGuide from "@/components/cancellationGuide";
+import CancellationGuide from "@/components/cancellation-guide";
 import Link from "next/link";
 
 /**

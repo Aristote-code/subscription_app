@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runManualReminderCheck } from "@/utils/scheduler";
+import { cookies } from "next/headers";
 import { getToken } from "next-auth/jwt";
 
 /**
@@ -10,7 +11,11 @@ import { getToken } from "next-auth/jwt";
 export async function POST(request: Request) {
   try {
     // Get user from JWT token
-    const token = await getToken({ req: request });
+    const cookieStore = cookies();
+    const token = await getToken({
+      req: { cookies: cookieStore } as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     if (!token || !token.sub) {
       return NextResponse.json(

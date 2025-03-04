@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,9 +87,36 @@ interface Subscription {
  * Dashboard page component for displaying user's subscriptions
  */
 export default function DashboardPage() {
-  const searchParams = useSearchParams();
+  return (
+    <main className="container py-6">
+      <div className="flex flex-col gap-6">
+        {/* Dashboard header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage your subscriptions and trials
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/add-subscription" className="gap-1">
+              <Plus className="h-4 w-4" />
+              Add Subscription
+            </Link>
+          </Button>
+        </div>
 
-  // State
+        {/* Dashboard content */}
+        <Suspense fallback={<div>Loading...</div>}>
+          <DashboardContent />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+
+function DashboardContent() {
+  const searchParams = useSearchParams();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

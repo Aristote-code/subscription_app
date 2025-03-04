@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 import { getToken } from "next-auth/jwt";
 
 /**
@@ -16,7 +17,11 @@ export async function GET(
     const { id } = params;
 
     // Get user ID from JWT token
-    const token = await getToken({ req: request });
+    const cookieStore = cookies();
+    const token = await getToken({
+      req: { cookies: cookieStore } as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     if (!token || !token.sub) {
       return NextResponse.json(
@@ -77,7 +82,11 @@ export async function PUT(
     const { id } = params;
 
     // Get user ID from JWT token
-    const token = await getToken({ req: request });
+    const cookieStore = cookies();
+    const token = await getToken({
+      req: { cookies: cookieStore } as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     if (!token || !token.sub) {
       return NextResponse.json(
@@ -143,7 +152,11 @@ export async function DELETE(
     const { id } = params;
 
     // Get user ID from JWT token
-    const token = await getToken({ req: request });
+    const cookieStore = cookies();
+    const token = await getToken({
+      req: { cookies: cookieStore } as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
 
     if (!token || !token.sub) {
       return NextResponse.json(

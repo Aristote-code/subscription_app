@@ -38,7 +38,13 @@ export async function GET(request: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, data: subscriptions });
+    // Map price to cost for frontend consistency
+    const mappedSubscriptions = subscriptions.map((sub) => ({
+      ...sub,
+      cost: sub.price,
+    }));
+
+    return NextResponse.json({ success: true, data: mappedSubscriptions });
   } catch (error) {
     console.error("Error fetching subscriptions:", error);
     return NextResponse.json(
@@ -72,6 +78,7 @@ export async function POST(request: Request) {
     const userId = token.sub;
 
     const body = await request.json();
+    console.log("Received subscription data:", body);
 
     // Validate required fields
     const { name, trialStartDate, trialEndDate, cost, billingCycle } = body;
@@ -90,7 +97,7 @@ export async function POST(request: Request) {
         description: body.description,
         trialStartDate: body.trialStartDate,
         trialEndDate: body.trialEndDate,
-        price: body.cost,
+        price: parseFloat(body.cost), // Make sure cost is converted to float for price field
         billingCycle: body.billingCycle,
         cancellationUrl: body.cancellationUrl,
         userId,
@@ -109,8 +116,14 @@ export async function POST(request: Request) {
       },
     });
 
+    // Map the subscription to include cost field for frontend consistency
+    const mappedSubscription = {
+      ...subscription,
+      cost: subscription.price,
+    };
+
     return NextResponse.json(
-      { success: true, data: subscription },
+      { success: true, data: mappedSubscription },
       { status: 201 }
     );
   } catch (error) {

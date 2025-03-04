@@ -4,10 +4,10 @@ import { cookies } from "next/headers";
 import { getToken } from "next-auth/jwt";
 
 /**
- * GET handler for fetching a specific subscription
+ * GET handler for fetching a specific notification
  * @param request Request object
- * @param params Route parameters containing subscription ID
- * @returns The requested subscription
+ * @param params Route parameters containing notification ID
+ * @returns The requested notification
  */
 export async function GET(
   request: Request,
@@ -32,53 +32,44 @@ export async function GET(
 
     const userId = token.sub;
 
-    // Fetch subscription from database
-    const subscription = await prisma.subscription.findUnique({
+    // Fetch notification from database
+    const notification = await prisma.notification.findUnique({
       where: {
         id,
       },
-      include: {
-        reminders: true,
-      },
     });
 
-    // Check if subscription exists
-    if (!subscription) {
+    // Check if notification exists
+    if (!notification) {
       return NextResponse.json(
-        { success: false, error: "Subscription not found" },
+        { success: false, error: "Notification not found" },
         { status: 404 }
       );
     }
 
-    // Check if subscription belongs to user
-    if (subscription.userId !== userId) {
+    // Check if notification belongs to user
+    if (notification.userId !== userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // Map the subscription to include cost field for frontend consistency
-    const mappedSubscription = {
-      ...subscription,
-      cost: subscription.price,
-    };
-
-    return NextResponse.json({ success: true, data: mappedSubscription });
+    return NextResponse.json({ success: true, data: notification });
   } catch (error) {
-    console.error("Error fetching subscription:", error);
+    console.error("Error fetching notification:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to fetch subscription" },
+      { success: false, error: "Failed to fetch notification" },
       { status: 500 }
     );
   }
 }
 
 /**
- * PUT handler for updating a subscription
- * @param request Request with updated subscription data
- * @param params Route parameters containing subscription ID
- * @returns The updated subscription
+ * PUT handler for updating a notification
+ * @param request Request with updated notification data
+ * @param params Route parameters containing notification ID
+ * @returns The updated notification
  */
 export async function PUT(
   request: Request,
@@ -104,66 +95,50 @@ export async function PUT(
     const userId = token.sub;
 
     const body = await request.json();
-    console.log("Update subscription data:", body);
 
-    // Check if subscription exists and belongs to user
-    const existingSubscription = await prisma.subscription.findUnique({
+    // Check if notification exists and belongs to user
+    const existingNotification = await prisma.notification.findUnique({
       where: {
         id,
       },
     });
 
-    if (!existingSubscription) {
+    if (!existingNotification) {
       return NextResponse.json(
-        { success: false, error: "Subscription not found" },
+        { success: false, error: "Notification not found" },
         { status: 404 }
       );
     }
 
-    if (existingSubscription.userId !== userId) {
+    if (existingNotification.userId !== userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // Prepare data for update - handle cost to price mapping
-    const updateData = { ...body };
-
-    // If cost is provided, use it to update price
-    if (typeof updateData.cost !== "undefined") {
-      updateData.price = parseFloat(updateData.cost.toString());
-      delete updateData.cost; // Remove cost as it's not in the schema
-    }
-
-    // Update subscription in database
-    const updatedSubscription = await prisma.subscription.update({
+    // Update notification in database
+    const updatedNotification = await prisma.notification.update({
       where: {
         id,
       },
-      data: updateData,
+      data: body,
     });
 
-    // Map the subscription to include cost field for frontend consistency
-    const mappedSubscription = {
-      ...updatedSubscription,
-      cost: updatedSubscription.price,
-    };
-
-    return NextResponse.json({ success: true, data: mappedSubscription });
+    return NextResponse.json({ success: true, data: updatedNotification });
   } catch (error) {
-    console.error("Error updating subscription:", error);
+    console.error("Error updating notification:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to update subscription" },
+      { success: false, error: "Failed to update notification" },
       { status: 500 }
     );
   }
 }
 
 /**
- * DELETE handler for removing a subscription
+ * DELETE handler for removing a notification
  * @param request Request object
- * @param params Route parameters containing subscription ID
+ * @param params Route parameters containing notification ID
  * @returns Success message
  */
 export async function DELETE(
@@ -189,29 +164,29 @@ export async function DELETE(
 
     const userId = token.sub;
 
-    // Check if subscription exists and belongs to user
-    const existingSubscription = await prisma.subscription.findUnique({
+    // Check if notification exists and belongs to user
+    const existingNotification = await prisma.notification.findUnique({
       where: {
         id,
       },
     });
 
-    if (!existingSubscription) {
+    if (!existingNotification) {
       return NextResponse.json(
-        { success: false, error: "Subscription not found" },
+        { success: false, error: "Notification not found" },
         { status: 404 }
       );
     }
 
-    if (existingSubscription.userId !== userId) {
+    if (existingNotification.userId !== userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
 
-    // Delete subscription from database
-    await prisma.subscription.delete({
+    // Delete notification from database
+    await prisma.notification.delete({
       where: {
         id,
       },
@@ -219,12 +194,12 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
-      message: "Subscription deleted successfully",
+      message: "Notification deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting subscription:", error);
+    console.error("Error deleting notification:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to delete subscription" },
+      { success: false, error: "Failed to delete notification" },
       { status: 500 }
     );
   }

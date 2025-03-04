@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Tag, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -66,6 +68,36 @@ export default function SettingsPage() {
               Save Account Details
             </Button>
           </CardFooter>
+        </Card>
+
+        {/* Categories Management */}
+        <Card className="bg-black border-zinc-800 text-white">
+          <CardHeader>
+            <CardTitle>Categories Management</CardTitle>
+            <CardDescription className="text-zinc-400">
+              Organize your subscriptions with custom categories
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="bg-blue-600 p-2 rounded-md">
+                  <Tag className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Manage Categories</h3>
+                  <p className="text-sm text-zinc-400">
+                    Create, edit, and organize subscription categories
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" asChild>
+                <Link href="/settings/categories">
+                  <ChevronRight className="h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Notification Settings */}

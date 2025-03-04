@@ -17,6 +17,19 @@ interface Subscription {
   status?: string;
   cancellationUrl?: string;
   notes?: string;
+  categoryId?: string;
+}
+
+/**
+ * Category interface
+ */
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  isDefault?: boolean;
 }
 
 /**
@@ -49,14 +62,54 @@ const SubscriptionForm = ({
       .split("T")[0],
     cost: 0,
     billingCycle: "monthly",
-    cancellationUrl: "",
-    notes: "",
+    categoryId: "",
   };
 
-  // Form state
-  const [formData, setFormData] = useState<Subscription>(defaultSubscription);
+  const [formData, setFormData] = useState<Subscription>(
+    subscription || defaultSubscription
+  );
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch categories when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error('Failed to fetch categories');
+          // Use mock data as fallback
+          setCategories([
+            { id: '1', name: 'Entertainment', color: '#3B82F6', isDefault: true },
+            { id: '2', name: 'Productivity', color: '#10B981', isDefault: true },
+            { id: '3', name: 'Shopping', color: '#F59E0B', isDefault: true },
+            { id: '4', name: 'Finance', color: '#EF4444', isDefault: false },
+            { id: '5', name: 'Health & Fitness', color: '#8B5CF6', isDefault: false },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Use mock data as fallback
+        setCategories([
+          { id: '1', name: 'Entertainment', color: '#3B82F6', isDefault: true },
+          { id: '2', name: 'Productivity', color: '#10B981', isDefault: true },
+          { id: '3', name: 'Shopping', color: '#F59E0B', isDefault: true },
+          { id: '4', name: 'Finance', color: '#EF4444', isDefault: false },
+          { id: '5', name: 'Health & Fitness', color: '#8B5CF6', isDefault: false },
+        ]);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Initialize form with subscription data if provided
   useEffect(() => {
@@ -352,6 +405,26 @@ const SubscriptionForm = ({
             onChange={handleChange}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none"
           />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Category</label>
+          <select
+            name="categoryId"
+            value={formData.categoryId || ""}
+            onChange={handleChange}
+            className="w-full p-2 border rounded-md bg-zinc-800 border-zinc-700 text-white"
+          >
+            <option value="">Select a category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-zinc-400 mt-1">
+            Categorize your subscription for better organization
+          </p>
         </div>
       </div>
 

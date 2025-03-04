@@ -38,18 +38,22 @@ model Session {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String         @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  subscriptions Subscription[]
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                    String        @id @default(cuid())
+  email                 String        @unique
+  password              String
+  name                  String?
+  role                  String        @default("user")
+  accounts              Account[]
+  sessions              Session[]
+  subscriptions         Subscription[]
+  reminders             Reminder[]
+  notifications         Notification[]
+  categories            Category[]
+  emailVerified         Boolean       @default(false)
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 }
 
 model VerificationToken {
@@ -61,28 +65,30 @@ model VerificationToken {
 }
 
 model Subscription {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name            String
-  description     String?
-  price           Float
-  currency        String    @default("USD")
-  billingCycle    String    @default("MONTHLY") // MONTHLY, YEARLY, QUARTERLY, etc.
-  trialStartDate  DateTime?
-  trialEndDate    DateTime?
-  nextBillingDate DateTime?
-  isActive        Boolean   @default(true)
-  cancellationUrl String?
-  logo            String?
-  website         String?
-  category        String?
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  reminders       Reminder[]
+  id                  String        @id @default(cuid())
+  name                String
+  description         String?
+  price               Float
+  billingCycle        String        @default("monthly") // monthly, quarterly, annual, custom
+  startDate           DateTime
+  endDate             DateTime?
+  trialEndDate        DateTime?
+  autoRenew           Boolean       @default(true)
+  userId              String
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminders           Reminder[]
+  categoryId          String?
+  category            Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  status              String        @default("active") // active, cancelled, expired, trial
+  logo                String?
+  website             String?
+  cancellationUrl     String?
+  notes               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@index([userId])
+  @@index([categoryId])
 }
 
 model Reminder {
@@ -93,8 +99,11 @@ model Reminder {
   sent            Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
+  @@index([userId])
 }
 
 model Notification {
@@ -117,4 +126,29 @@ model CancellationGuide {
   url             String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model SystemSettings {
+  id                      String  @id @default(cuid())
+  enableEmailNotifications Boolean @default(true)
+  enableTrialEndReminders  Boolean @default(true)
+  defaultReminderDays      Int     @default(3)
+  maxSubscriptionsPerUser  Int     @default(50)
+  maintenanceMode          Boolean @default(false)
+}
+
+model Category {
+  id          String        @id @default(cuid())
+  name        String        
+  description String?
+  color       String?
+  icon        String?
+  isDefault   Boolean       @default(false)
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subscriptions Subscription[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
 } 

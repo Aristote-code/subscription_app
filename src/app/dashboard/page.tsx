@@ -460,7 +460,7 @@ export default function DashboardPage() {
                       subscription.trialEndDate
                     )}
                   </TableCell>
-                  <TableCell>${subscription.cost.toFixed(2)}</TableCell>
+                  <TableCell>${subscription?.cost?.toFixed(2)}</TableCell>
                   <TableCell className="capitalize">
                     {subscription.billingCycle}
                   </TableCell>

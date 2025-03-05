@@ -28,12 +28,12 @@ This document tracks the implementation status of the TrialGuard subscription ma
 - **Analytics Dashboard**: Spending insights and subscription statistics
 - **Cancellation Instructions**: Guides for canceling subscriptions
 - **Category Management**: Create and manage subscription categories
+- **User Onboarding**: Guided introduction for new users
 
 ## Features In Progress
 
 - **Email Notification System**: Send email notifications for reminders
 - **Scheduled Reminder System**: Automated reminders for trial end dates
-- **User Onboarding**: Guided introduction for new users
 - **Import/Export Functionality**: Import/export subscription data
 - **Mobile Optimization**: Responsive design for mobile devices
 
@@ -68,11 +68,10 @@ This document tracks the implementation status of the TrialGuard subscription ma
 
 1. **Email Service Integration**: Implement email notifications for reminders
 2. **Scheduled Reminder System**: Set up automated reminders for trial end dates
-3. **User Onboarding**: Create a guided introduction for new users
-4. **Import/Export Functionality**: Add ability to import/export subscription data
-5. **Mobile Optimization**: Ensure responsive design for mobile devices
-6. **Testing**: Add comprehensive test coverage
-7. **Deployment**: Deploy to production environment
+3. **Import/Export Functionality**: Add ability to import/export subscription data
+4. **Mobile Optimization**: Ensure responsive design for mobile devices
+5. **Testing**: Add comprehensive test coverage
+6. **Deployment**: Deploy to production environment
 
 ## Development Guidelines
 

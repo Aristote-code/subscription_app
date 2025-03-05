@@ -29,8 +29,9 @@ CREATE TABLE "Category" (
 );
 
 -- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
+-- PRAGMA foreign_keys=OFF;
+
+-- Create new table for Reminder
 CREATE TABLE "new_Reminder" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "subscriptionId" TEXT NOT NULL,
@@ -42,7 +43,10 @@ CREATE TABLE "new_Reminder" (
     CONSTRAINT "Reminder_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Reminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
-INSERT INTO "new_Reminder" ("createdAt", "date", "id", "sent", "subscriptionId", "updatedAt") SELECT "createdAt", "date", "id", "sent", "subscriptionId", "updatedAt" FROM "Reminder";
+
+-- Copy data from old table to new table
+INSERT INTO "new_Reminder" ("createdAt", "date", "id", "sent", "subscriptionId", "updatedAt") 
+SELECT "createdAt", "date", "id", "sent", "subscriptionId", "updatedAt" FROM "Reminder";
 
 -- Update the userId field with the actual user ID from the subscription
 UPDATE "new_Reminder" 
@@ -52,10 +56,33 @@ SET "userId" = (
     WHERE "s"."id" = "new_Reminder"."subscriptionId"
 );
 
+-- Drop old table
 DROP TABLE "Reminder";
-ALTER TABLE "new_Reminder" RENAME TO "Reminder";
+
+-- Create new table with original name (instead of RENAME)
+CREATE TABLE "Reminder" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "subscriptionId" TEXT NOT NULL,
+    "date" DATETIME NOT NULL,
+    "sent" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    "userId" TEXT NOT NULL DEFAULT 'default-user-id',
+    CONSTRAINT "Reminder_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Reminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Copy data from the temporary table to the final table
+INSERT INTO "Reminder" SELECT * FROM "new_Reminder";
+
+-- Drop the temporary table
+DROP TABLE "new_Reminder";
+
+-- Create indices
 CREATE INDEX "Reminder_subscriptionId_idx" ON "Reminder"("subscriptionId");
 CREATE INDEX "Reminder_userId_idx" ON "Reminder"("userId");
+
+-- Create new table for Subscription
 CREATE TABLE "new_Subscription" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
@@ -78,11 +105,49 @@ CREATE TABLE "new_Subscription" (
     CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Subscription_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
-INSERT INTO "new_Subscription" ("billingCycle", "cancellationUrl", "createdAt", "description", "id", "logo", "name", "notes", "price", "trialEndDate", "updatedAt", "userId", "website") SELECT "billingCycle", "cancellationUrl", "createdAt", "description", "id", "logo", "name", "notes", "price", "trialEndDate", "updatedAt", "userId", "website" FROM "Subscription";
+
+-- Copy data from old table to new table
+INSERT INTO "new_Subscription" ("billingCycle", "cancellationUrl", "createdAt", "description", "id", "logo", "name", "notes", "price", "trialEndDate", "updatedAt", "userId", "website") 
+SELECT "billingCycle", "cancellationUrl", "createdAt", "description", "id", "logo", "name", "notes", "price", "trialEndDate", "updatedAt", "userId", "website" FROM "Subscription";
+
+-- Drop old table
 DROP TABLE "Subscription";
-ALTER TABLE "new_Subscription" RENAME TO "Subscription";
+
+-- Create new table with original name (instead of RENAME)
+CREATE TABLE "Subscription" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "price" REAL NOT NULL,
+    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
+    "startDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endDate" DATETIME,
+    "trialEndDate" DATETIME,
+    "autoRenew" BOOLEAN NOT NULL DEFAULT true,
+    "userId" TEXT NOT NULL,
+    "categoryId" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "logo" TEXT,
+    "website" TEXT,
+    "cancellationUrl" TEXT,
+    "notes" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Subscription_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Copy data from the temporary table to the final table
+INSERT INTO "Subscription" SELECT * FROM "new_Subscription";
+
+-- Drop the temporary table
+DROP TABLE "new_Subscription";
+
+-- Create indices
 CREATE INDEX "Subscription_userId_idx" ON "Subscription"("userId");
 CREATE INDEX "Subscription_categoryId_idx" ON "Subscription"("categoryId");
+
+-- Create new table for User
 CREATE TABLE "new_User" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "email" TEXT NOT NULL,
@@ -95,12 +160,39 @@ CREATE TABLE "new_User" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
-INSERT INTO "new_User" ("createdAt", "email", "emailVerified", "id", "name", "password", "updatedAt") SELECT "createdAt", "email", coalesce("emailVerified", false) AS "emailVerified", "id", "name", COALESCE("password", '') AS "password", "updatedAt" FROM "User";
-DROP TABLE "User";
-ALTER TABLE "new_User" RENAME TO "User";
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;
 
--- CreateIndex
+-- Copy data from old table to new table with coalesce for nullable fields
+INSERT INTO "new_User" ("createdAt", "email", "emailVerified", "id", "name", "password", "updatedAt") 
+SELECT "createdAt", "email", coalesce("emailVerified", false) AS "emailVerified", "id", "name", COALESCE("password", '') AS "password", "updatedAt" FROM "User";
+
+-- Drop old table
+DROP TABLE "User";
+
+-- Create new table with original name (instead of RENAME)
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL DEFAULT '',
+    "name" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'user',
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "resetPasswordToken" TEXT,
+    "resetPasswordExpires" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- Copy data from the temporary table to the final table
+INSERT INTO "User" SELECT * FROM "new_User";
+
+-- Drop the temporary table
+DROP TABLE "new_User";
+
+-- Create indices
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- Re-enable foreign keys
+-- PRAGMA foreign_keys=ON;
+
+-- Create index for Category
 CREATE INDEX "Category_userId_idx" ON "Category"("userId");

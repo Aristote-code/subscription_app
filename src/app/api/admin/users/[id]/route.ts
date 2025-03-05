@@ -34,10 +34,10 @@ export async function PUT(
     // Check if user is an admin
     const currentUser = await prisma.user.findUnique({
       where: { id: adminId },
-      select: { isAdmin: true },
+      select: { role: true },
     });
 
-    if (!currentUser?.isAdmin) {
+    if (currentUser?.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Admin access required" },
         { status: 403 }
@@ -46,18 +46,18 @@ export async function PUT(
 
     // Parse request body
     const body = await request.json();
-    const { isAdmin } = body;
+    const { role } = body;
 
     // Validate required fields
-    if (isAdmin === undefined) {
+    if (role === undefined) {
       return NextResponse.json(
-        { success: false, error: "isAdmin field is required" },
+        { success: false, error: "role field is required" },
         { status: 400 }
       );
     }
 
     // Prevent self-demotion
-    if (userId === adminId && isAdmin === false) {
+    if (userId === adminId && role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Cannot remove admin status from yourself" },
         { status: 400 }
@@ -68,13 +68,13 @@ export async function PUT(
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        isAdmin,
+        role,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        isAdmin: true,
+        role: true,
       },
     });
 
@@ -123,10 +123,10 @@ export async function DELETE(
     // Check if user is an admin
     const currentUser = await prisma.user.findUnique({
       where: { id: adminId },
-      select: { isAdmin: true },
+      select: { role: true },
     });
 
-    if (!currentUser?.isAdmin) {
+    if (currentUser?.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Admin access required" },
         { status: 403 }

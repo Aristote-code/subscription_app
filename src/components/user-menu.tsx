@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { LifeBuoyIcon } from "lucide-react";
 
 interface UserMenuProps {
   user: {
@@ -85,6 +86,15 @@ export function UserMenu({ user }: UserMenuProps) {
           className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
         >
           <Link href="/settings">Settings</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          asChild
+          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
+        >
+          <Link href="/support">
+            <LifeBuoyIcon className="mr-2 h-4 w-4" />
+            Support
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-zinc-800" />
         <DropdownMenuItem

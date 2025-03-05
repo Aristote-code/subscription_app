@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { getCurrentUser } from "@/lib/auth";
 import Header from "@/components/header";
-import Sidebar from "@/components/sidebar";
+import { OnboardingProvider, OnboardingModal } from "@/components/onboarding";
 
 export default function DashboardLayout({
   children,
@@ -10,14 +11,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-black text-white">
-      <Sidebar />
-      <div className="flex-1 flex flex-col pl-16">
+    <OnboardingProvider>
+      <div className="flex min-h-screen flex-col bg-black text-white">
         <Header />
         <main className="flex-1 p-4 overflow-auto">
           <div className="mx-auto w-full">{children}</div>
         </main>
       </div>
-    </div>
+      <OnboardingModal />
+    </OnboardingProvider>
   );
 }

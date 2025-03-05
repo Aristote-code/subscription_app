@@ -8,6 +8,19 @@ type ThemeProviderProps = {
   [prop: string]: any;
 };
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+export function ThemeProvider({
+  children,
+  defaultTheme = "dark",
+  storageKey = "trialguard-theme",
+  ...props
+}: ThemeProviderProps) {
+  return (
+    <NextThemesProvider
+      defaultTheme={defaultTheme}
+      storageKey={storageKey}
+      {...props}
+    >
+      {children}
+    </NextThemesProvider>
+  );
 }

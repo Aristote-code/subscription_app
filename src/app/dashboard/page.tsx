@@ -53,14 +53,28 @@ import {
   CalendarIcon,
   PlusCircle,
   Trash,
+  Eye,
+  CalendarDays,
+  ChevronDown,
+  Check,
+  Edit,
 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { format } from "date-fns";
+import { useSearchParams, useRouter } from "next/navigation";
+import { format, parseISO, addDays, differenceInDays } from "date-fns";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AddSubscriptionForm } from "@/components/add-subscription-form";
 
 // Define the Subscription interface
 interface Reminder {
@@ -87,40 +101,78 @@ interface Subscription {
  * Dashboard page component for displaying user's subscriptions
  */
 export default function DashboardPage() {
-  return (
-    <main className="container py-6">
-      <div className="flex flex-col gap-6">
-        {/* Dashboard header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Manage your subscriptions and trials
-            </p>
-          </div>
-          <Button asChild>
-            <Link href="/add-subscription" className="gap-1">
-              <Plus className="h-4 w-4" />
-              Add Subscription
-            </Link>
-          </Button>
-        </div>
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams?.get("q") || "");
 
-        {/* Dashboard content */}
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Update URL with search parameter
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (value) {
+      params.set("q", value);
+    } else {
+      params.delete("q");
+    }
+    router.replace(`/dashboard?${params.toString()}`);
+  };
+
+  return (
+    <div className="container py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold">Your Subscriptions</h2>
+
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search subscriptions..."
+              className="pl-8 pr-4 bg-background border-input text-foreground placeholder:text-muted-foreground w-60"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground border-none shadow-none gap-1">
+                <Plus className="h-4 w-4" />
+                Add Subscription
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] bg-background border-border text-foreground">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold">
+                  Add New Subscription
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Track a new subscription or free trial
+                </DialogDescription>
+              </DialogHeader>
+              <AddSubscriptionForm isDialog={true} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="space-y-8">
         <Suspense fallback={<div>Loading...</div>}>
-          <DashboardContent />
+          <DashboardContent initialSearchTerm={searchTerm} />
         </Suspense>
       </div>
-    </main>
+    </div>
   );
 }
 
-function DashboardContent() {
+function DashboardContent({ initialSearchTerm = "" }) {
   const searchParams = useSearchParams();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [selectedSubscription, setSelectedSubscription] =
     useState<Subscription | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -155,9 +207,9 @@ function DashboardContent() {
     ],
   };
 
-  // Initialize search term from URL params
+  // Get search term from URL
   useEffect(() => {
-    const query = searchParams.get("q");
+    const query = searchParams?.get("q");
     if (query) {
       setSearchTerm(query);
     }
@@ -227,34 +279,24 @@ function DashboardContent() {
   const getStatusBadge = (status: string, endDate: Date | string) => {
     const daysRemaining = getDaysRemaining(endDate);
 
-    if (status === "expired") {
-      return <Badge variant="destructive">Expired</Badge>;
-    }
-
-    if (status === "cancelled") {
-      return <Badge variant="outline">Cancelled</Badge>;
-    }
-
-    if (daysRemaining <= 3) {
-      return <Badge variant="destructive">{daysRemaining} days left</Badge>;
-    }
-
-    if (daysRemaining <= 7) {
+    if (daysRemaining < 0) {
       return (
-        <Badge
-          variant="secondary"
-          className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-        >
+        <Badge variant="secondary" className="bg-zinc-800 text-zinc-300">
+          Expired
+        </Badge>
+      );
+    }
+
+    if (daysRemaining < 7) {
+      return (
+        <Badge variant="secondary" className="bg-zinc-800 text-white">
           {daysRemaining} days left
         </Badge>
       );
     }
 
     return (
-      <Badge
-        variant="secondary"
-        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-      >
+      <Badge variant="secondary" className="bg-zinc-800 text-white">
         {daysRemaining} days left
       </Badge>
     );
@@ -319,9 +361,14 @@ function DashboardContent() {
   };
 
   // Filter subscriptions based on search term
-  const filteredSubscriptions = subscriptions.filter((sub) =>
-    sub.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      sub.name.toLowerCase().includes(term) ||
+      (sub.description && sub.description.toLowerCase().includes(term))
+    );
+  });
 
   // Fetch reminders for selected subscription
   const fetchReminders = async (subscriptionId: string) => {
@@ -403,109 +450,123 @@ function DashboardContent() {
     }
   };
 
-  return (
-    <div>
-      {/* Dashboard Content */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Your Subscriptions</h1>
-      </div>
-
-      {/* Subscriptions Table */}
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        </div>
-      ) : error ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <h3 className="mb-2 text-lg font-semibold text-red-500">
-            Error loading subscriptions
-          </h3>
-          <p className="mb-6 text-sm text-muted-foreground">{error}</p>
-          <Button
-            variant="outline"
-            onClick={() => window.location.reload()}
-            className="bg-zinc-800 hover:bg-zinc-700 text-white"
-          >
-            Try Again
-          </Button>
-        </div>
-      ) : filteredSubscriptions.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <h3 className="mb-2 text-lg font-semibold">No subscriptions found</h3>
-          <p className="mb-6 text-sm text-muted-foreground">
-            {searchTerm
-              ? `No results for "${searchTerm}"`
-              : "You haven't added any subscriptions yet."}
+  // No subscriptions view
+  if (subscriptions.length === 0) {
+    return (
+      <div className="rounded-lg border border-zinc-800 p-8 text-center">
+        <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
+          <h3 className="mt-4 text-lg font-semibold">No subscriptions found</h3>
+          <p className="mb-6 mt-2 text-sm text-zinc-400">
+            You haven't added any subscriptions yet.
           </p>
-          {searchTerm ? (
-            <Button variant="outline" onClick={() => setSearchTerm("")}>
-              Clear search
-            </Button>
-          ) : (
-            <Button asChild className="bg-green-600 hover:bg-green-500">
-              <Link href="/add-subscription">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-zinc-800 hover:bg-zinc-700 text-white border-none shadow-none gap-1">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Your First Subscription
-              </Link>
-            </Button>
-          )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] bg-black border-zinc-800 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold">
+                  Add New Subscription
+                </DialogTitle>
+                <DialogDescription className="text-zinc-400">
+                  Track a new subscription or free trial
+                </DialogDescription>
+              </DialogHeader>
+              <AddSubscriptionForm isDialog={true} />
+            </DialogContent>
+          </Dialog>
         </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableCaption>
-              A list of your recent subscriptions and trials.
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Trial Period</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead>Billing Cycle</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+      </div>
+    );
+  }
+
+  // Loading view
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Error view
+  if (error) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-zinc-800 p-8 text-center">
+        <h3 className="mb-2 text-lg font-semibold text-red-500">
+          Error loading subscriptions
+        </h3>
+        <p className="mb-6 text-sm text-zinc-400">{error}</p>
+        <Button
+          variant="outline"
+          onClick={() => window.location.reload()}
+          className="bg-zinc-800 hover:bg-zinc-700 text-white"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Subscriptions view with data
+  return (
+    <div>
+      <div className="rounded-md border border-zinc-800">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-zinc-900 bg-black">
+              <TableHead className="w-[300px]">Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>End Date</TableHead>
+              <TableHead className="text-right">Cost</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSubscriptions.map((subscription) => (
+              <TableRow
+                key={subscription.id}
+                className="hover:bg-zinc-900 cursor-pointer"
+                onClick={() => handleViewDetails(subscription)}
+              >
+                <TableCell className="font-medium">
+                  {subscription.name}
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(
+                    subscription.status,
+                    subscription.trialEndDate
+                  )}
+                </TableCell>
+                <TableCell>
+                  {formatDate(subscription.trialEndDate)}{" "}
+                  <span className="text-xs text-zinc-500">
+                    ({getDaysRemaining(subscription.trialEndDate)})
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  ${subscription.cost.toFixed(2)}/{subscription.billingCycle}
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewDetails(subscription);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSubscriptions.map((subscription) => (
-                <TableRow key={subscription.id}>
-                  <TableCell className="font-medium">
-                    {subscription.name}
-                    {subscription.description && (
-                      <div className="text-xs text-muted-foreground">
-                        {subscription.description}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {formatDate(subscription.trialStartDate)} -{" "}
-                    {formatDate(subscription.trialEndDate)}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(
-                      subscription.status,
-                      subscription.trialEndDate
-                    )}
-                  </TableCell>
-                  <TableCell>${subscription?.cost?.toFixed(2)}</TableCell>
-                  <TableCell className="capitalize">
-                    {subscription.billingCycle}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewDetails(subscription)}
-                    >
-                      Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Subscription Details Drawer */}
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>

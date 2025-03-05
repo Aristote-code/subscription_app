@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Category } from "@/types";
 
 /**
  * Subscription data interface
@@ -18,18 +19,6 @@ interface Subscription {
   cancellationUrl?: string;
   notes?: string;
   categoryId?: string;
-}
-
-/**
- * Category interface
- */
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  icon?: string;
-  isDefault?: boolean;
 }
 
 /**
@@ -78,30 +67,50 @@ const SubscriptionForm = ({
     const fetchCategories = async () => {
       setIsLoadingCategories(true);
       try {
-        const response = await fetch('/api/categories');
+        const response = await fetch("/api/categories");
         if (response.ok) {
           const data = await response.json();
           setCategories(data);
         } else {
-          console.error('Failed to fetch categories');
+          console.error("Failed to fetch categories");
           // Use mock data as fallback
           setCategories([
-            { id: '1', name: 'Entertainment', color: '#3B82F6', isDefault: true },
-            { id: '2', name: 'Productivity', color: '#10B981', isDefault: true },
-            { id: '3', name: 'Shopping', color: '#F59E0B', isDefault: true },
-            { id: '4', name: 'Finance', color: '#EF4444', isDefault: false },
-            { id: '5', name: 'Health & Fitness', color: '#8B5CF6', isDefault: false },
+            {
+              id: "1",
+              name: "Entertainment",
+              color: "#3B82F6",
+              isDefault: true,
+            },
+            {
+              id: "2",
+              name: "Productivity",
+              color: "#10B981",
+              isDefault: true,
+            },
+            { id: "3", name: "Shopping", color: "#F59E0B", isDefault: true },
+            { id: "4", name: "Finance", color: "#EF4444", isDefault: false },
+            {
+              id: "5",
+              name: "Health & Fitness",
+              color: "#8B5CF6",
+              isDefault: false,
+            },
           ]);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
         // Use mock data as fallback
         setCategories([
-          { id: '1', name: 'Entertainment', color: '#3B82F6', isDefault: true },
-          { id: '2', name: 'Productivity', color: '#10B981', isDefault: true },
-          { id: '3', name: 'Shopping', color: '#F59E0B', isDefault: true },
-          { id: '4', name: 'Finance', color: '#EF4444', isDefault: false },
-          { id: '5', name: 'Health & Fitness', color: '#8B5CF6', isDefault: false },
+          { id: "1", name: "Entertainment", color: "#3B82F6", isDefault: true },
+          { id: "2", name: "Productivity", color: "#10B981", isDefault: true },
+          { id: "3", name: "Shopping", color: "#F59E0B", isDefault: true },
+          { id: "4", name: "Finance", color: "#EF4444", isDefault: false },
+          {
+            id: "5",
+            name: "Health & Fitness",
+            color: "#8B5CF6",
+            isDefault: false,
+          },
         ]);
       } finally {
         setIsLoadingCategories(false);

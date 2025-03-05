@@ -1,35 +1,41 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { getToken } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 /**
  * GET handler to retrieve all categories
  */
 export async function GET() {
   try {
-    // Get token from cookies
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    // Get session from NextAuth
+    const session = await getSession();
 
-    // Check if token exists
-    if (!token) {
+    // Check if user is authenticated
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
-        { error: "Unauthorized: No token provided" },
+        { error: "Unauthorized: Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Verify token and get user ID
-    const payload = getToken(token);
-    if (!payload || !payload.id) {
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
+        { error: "Unauthorized: User not found" },
         { status: 401 }
       );
     }
 
-    const userId = payload.id;
+    const userId = user.id;
 
     // Get all categories and count subscriptions for each category
     const categories = await prisma.category.findMany({
@@ -77,25 +83,35 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    // Get session from NextAuth
+    const session = await getSession();
 
-    if (!token) {
+    // Check if user is authenticated
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
-        { error: "Unauthorized: No token provided" },
+        { error: "Unauthorized: Not authenticated" },
         { status: 401 }
       );
     }
 
-    const payload = getToken(token);
-    if (!payload || !payload.id) {
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
+        { error: "Unauthorized: User not found" },
         { status: 401 }
       );
     }
 
-    const userId = payload.id;
+    const userId = user.id;
     const body = await request.json();
 
     // Validate required fields
@@ -128,7 +144,7 @@ export async function POST(request: Request) {
         description: body.description,
         color: body.color || "#3B82F6", // Default blue color
         icon: body.icon || "tag",
-        userId,
+        userId: userId,
         isDefault: false, // User-created categories are not default
       },
     });

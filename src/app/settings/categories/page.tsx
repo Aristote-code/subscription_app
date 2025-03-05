@@ -45,7 +45,7 @@ import {
   CheckCircle,
   FileSpreadsheet,
   CircleHelp,
-  TV,
+  Monitor,
   ShoppingBag,
   Briefcase,
   DollarSign,
@@ -56,19 +56,7 @@ import {
   Gamepad,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-/**
- * Interface for Category
- */
-interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  icon?: string;
-  subscriptionCount: number;
-  isDefault?: boolean;
-}
+import { Category } from "@/types";
 
 /**
  * Categories Management Page
@@ -362,7 +350,7 @@ export default function CategoriesPage() {
           cat.description || "",
           cat.color || "",
           cat.icon || "",
-          cat.subscriptionCount.toString(),
+          (cat.subscriptionCount || 0).toString(),
         ]),
       ]
         .map((row) => row.join(","))
@@ -392,7 +380,7 @@ export default function CategoriesPage() {
   const IconForCategory = ({ icon }: { icon?: string }) => {
     switch (icon) {
       case "entertainment":
-        return <TV className="h-4 w-4" />;
+        return <Monitor className="h-4 w-4" />;
       case "shopping":
         return <ShoppingBag className="h-4 w-4" />;
       case "productivity":
@@ -503,7 +491,9 @@ export default function CategoriesPage() {
                         <div className="flex items-center gap-2">
                           <div
                             className="h-4 w-4 rounded-full"
-                            style={{ backgroundColor: category.color }}
+                            style={{
+                              backgroundColor: category.color || "#CCCCCC",
+                            }}
                           />
                           <span className="font-medium">{category.name}</span>
                           {category.isDefault && (
@@ -531,9 +521,10 @@ export default function CategoriesPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-8 w-8 text-red-500 hover:bg-red-100 hover:text-red-600"
                             disabled={
                               category.isDefault ||
-                              category.subscriptionCount > 0
+                              (category.subscriptionCount || 0) > 0
                             }
                             onClick={() => confirmDeleteCategory(category.id)}
                           >

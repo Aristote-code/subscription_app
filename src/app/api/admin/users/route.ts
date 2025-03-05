@@ -26,15 +26,15 @@ export async function GET() {
 
     const userId = token.sub;
 
-    // Check if user is an admin
+    // Check if user is admin
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true },
+      select: { role: true },
     });
 
-    if (!currentUser?.isAdmin) {
+    if (currentUser?.role !== "ADMIN") {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
@@ -45,7 +45,7 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
-        isAdmin: true,
+        role: true,
         createdAt: true,
         _count: {
           select: {
@@ -63,7 +63,7 @@ export async function GET() {
       id: user.id,
       name: user.name || "Unnamed User",
       email: user.email,
-      isAdmin: user.isAdmin || false,
+      isAdmin: user.role === "ADMIN",
       createdAt: user.createdAt.toISOString(),
       subscriptionCount: user._count.subscriptions,
     }));

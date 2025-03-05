@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { getToken } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 /**
  * GET handler to retrieve a specific category
@@ -13,28 +12,35 @@ export async function GET(
   try {
     const categoryId = params.id;
 
-    // Get token from cookies
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    // Get session from NextAuth
+    const session = await getSession();
 
-    // Check if token exists
-    if (!token) {
+    // Check if user is authenticated
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
-        { error: "Unauthorized: No token provided" },
+        { error: "Unauthorized: Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Verify token and get user ID
-    const payload = getToken(token);
-    if (!payload || !payload.id) {
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
+        { error: "Unauthorized: User not found" },
         { status: 401 }
       );
     }
 
-    const userId = payload.id;
+    const userId = user.id;
 
     // Get the category and count its subscriptions
     const category = await prisma.category.findUnique({
@@ -98,28 +104,35 @@ export async function PUT(
   try {
     const categoryId = params.id;
 
-    // Get token from cookies
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    // Get session from NextAuth
+    const session = await getSession();
 
-    // Check if token exists
-    if (!token) {
+    // Check if user is authenticated
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
-        { error: "Unauthorized: No token provided" },
+        { error: "Unauthorized: Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Verify token and get user ID
-    const payload = getToken(token);
-    if (!payload || !payload.id) {
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
+        { error: "Unauthorized: User not found" },
         { status: 401 }
       );
     }
 
-    const userId = payload.id;
+    const userId = user.id;
     const body = await request.json();
 
     // Validate required fields
@@ -228,28 +241,35 @@ export async function DELETE(
   try {
     const categoryId = params.id;
 
-    // Get token from cookies
-    const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    // Get session from NextAuth
+    const session = await getSession();
 
-    // Check if token exists
-    if (!token) {
+    // Check if user is authenticated
+    if (!session || !session.user || !session.user.email) {
       return NextResponse.json(
-        { error: "Unauthorized: No token provided" },
+        { error: "Unauthorized: Not authenticated" },
         { status: 401 }
       );
     }
 
-    // Verify token and get user ID
-    const payload = getToken(token);
-    if (!payload || !payload.id) {
+    // Get user from database
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session.user.email,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
+        { error: "Unauthorized: User not found" },
         { status: 401 }
       );
     }
 
-    const userId = payload.id;
+    const userId = user.id;
 
     // Find the category to delete
     const category = await prisma.category.findUnique({

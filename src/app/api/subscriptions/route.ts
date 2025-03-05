@@ -81,9 +81,9 @@ export async function POST(request: Request) {
     console.log("Received subscription data:", body);
 
     // Validate required fields
-    const { name, trialStartDate, trialEndDate, cost, billingCycle } = body;
+    const { name, trialEndDate, cost, billingCycle } = body;
 
-    if (!name || !trialStartDate || !trialEndDate || !cost || !billingCycle) {
+    if (!name || !trialEndDate || !cost || !billingCycle) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -93,15 +93,16 @@ export async function POST(request: Request) {
     // Create subscription in database
     const subscription = await prisma.subscription.create({
       data: {
+        userId,
         name: body.name,
         description: body.description,
-        trialStartDate: body.trialStartDate,
+        startDate: new Date(),
         trialEndDate: body.trialEndDate,
         price: parseFloat(body.cost), // Make sure cost is converted to float for price field
         billingCycle: body.billingCycle,
+        categoryId: body.categoryId,
         cancellationUrl: body.cancellationUrl,
-        userId,
-        isActive: true,
+        notes: body.notes,
       },
     });
 
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
       data: {
         date: reminderDate,
         subscriptionId: subscription.id,
+        userId,
       },
     });
 

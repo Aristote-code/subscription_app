@@ -120,6 +120,7 @@ export async function POST(request: Request) {
       data: {
         date: new Date(date),
         subscriptionId,
+        userId,
         sent: false,
       },
       include: {

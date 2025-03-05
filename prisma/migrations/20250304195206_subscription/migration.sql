@@ -1,6 +1,6 @@
 -- RedefineTables
-PRAGMA defer_foreign_keys=ON;
-PRAGMA foreign_keys=OFF;
+-- PRAGMA defer_foreign_keys=ON;
+-- PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_Reminder" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "subscriptionId" TEXT NOT NULL,
@@ -14,7 +14,19 @@ CREATE TABLE "new_Reminder" (
 );
 INSERT INTO "new_Reminder" ("createdAt", "date", "id", "sent", "subscriptionId", "updatedAt", "userId") SELECT "createdAt", "date", "id", "sent", "subscriptionId", "updatedAt", "userId" FROM "Reminder";
 DROP TABLE "Reminder";
-ALTER TABLE "new_Reminder" RENAME TO "Reminder";
+CREATE TABLE "Reminder" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "subscriptionId" TEXT NOT NULL,
+    "date" DATETIME NOT NULL,
+    "sent" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    "userId" TEXT NOT NULL,
+    CONSTRAINT "Reminder_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Reminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+INSERT INTO "Reminder" SELECT * FROM "new_Reminder";
+DROP TABLE "new_Reminder";
 CREATE INDEX "Reminder_subscriptionId_idx" ON "Reminder"("subscriptionId");
 CREATE INDEX "Reminder_userId_idx" ON "Reminder"("userId");
 CREATE TABLE "new_Subscription" (
@@ -41,7 +53,7 @@ CREATE TABLE "new_Subscription" (
 );
 INSERT INTO "new_Subscription" ("autoRenew", "billingCycle", "cancellationUrl", "categoryId", "createdAt", "description", "endDate", "id", "logo", "name", "notes", "price", "startDate", "status", "trialEndDate", "updatedAt", "userId", "website") SELECT "autoRenew", "billingCycle", "cancellationUrl", "categoryId", "createdAt", "description", "endDate", "id", "logo", "name", "notes", "price", "startDate", "status", "trialEndDate", "updatedAt", "userId", "website" FROM "Subscription";
 DROP TABLE "Subscription";
-ALTER TABLE "new_Subscription" RENAME TO "Subscription";
+EXEC sp_rename 'new_Subscription', 'Subscription';
 CREATE INDEX "Subscription_userId_idx" ON "Subscription"("userId");
 CREATE INDEX "Subscription_categoryId_idx" ON "Subscription"("categoryId");
 CREATE TABLE "new_User" (
@@ -58,7 +70,8 @@ CREATE TABLE "new_User" (
 );
 INSERT INTO "new_User" ("createdAt", "email", "emailVerified", "id", "name", "password", "resetPasswordExpires", "resetPasswordToken", "role", "updatedAt") SELECT "createdAt", "email", "emailVerified", "id", "name", "password", "resetPasswordExpires", "resetPasswordToken", "role", "updatedAt" FROM "User";
 DROP TABLE "User";
-ALTER TABLE "new_User" RENAME TO "User";
+EXEC sp_rename 'new_User', 'User';
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-PRAGMA foreign_keys=ON;
-PRAGMA defer_foreign_keys=OFF;
+-- Ensure SQLite compatibility with pragmas
+-- PRAGMA foreign_keys=ON;
+-- PRAGMA defer_foreign_keys=OFF;

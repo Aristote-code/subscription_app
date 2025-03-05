@@ -292,7 +292,7 @@ export default function AddSubscriptionPage() {
             </Button>
             <Button
               type="submit"
-              className="bg-green-600 hover:bg-green-500"
+              className="bg-zinc-800 hover:bg-zinc-700 text-white"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

@@ -16,34 +16,31 @@ const DEFAULT_SETTINGS = {
  * GET /api/admin/settings
  * Get system settings (admin only)
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Get user ID from session token
     const cookieStore = cookies();
     const token = await getToken({
-      req: { cookies: cookieStore } as any,
+      req: request as any,
       secret: process.env.NEXTAUTH_SECRET,
     });
+    const userId = token?.sub;
 
-    // Check if user is authenticated and is an admin
-    if (!token || !token.sub) {
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const userId = token.sub;
-
-    // Check if user is an admin
+    // Check if user is admin
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true },
+      select: { role: true },
     });
 
-    if (!currentUser?.isAdmin) {
+    if (currentUser?.role !== "ADMIN") {
       return NextResponse.json(
-        { success: false, error: "Forbidden: Admin access required" },
+        { success: false, error: "Unauthorized" },
         { status: 403 }
       );
     }
@@ -91,10 +88,10 @@ export async function PUT(request: Request) {
     // Check if user is an admin
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isAdmin: true },
+      select: { role: true },
     });
 
-    if (!currentUser?.isAdmin) {
+    if (currentUser?.role !== "ADMIN") {
       return NextResponse.json(
         { success: false, error: "Forbidden: Admin access required" },
         { status: 403 }

@@ -33,7 +33,6 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
-        image: true,
         createdAt: true,
       },
     });
@@ -122,7 +121,6 @@ export async function PUT(request: Request) {
         id: true,
         name: true,
         email: true,
-        image: true,
         createdAt: true,
       },
     });

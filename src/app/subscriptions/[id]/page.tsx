@@ -36,12 +36,14 @@ import {
   Edit,
   HelpCircle,
   Plus,
+  X,
 } from "lucide-react";
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
+  TableHead,
   TableRow,
 } from "@/components/ui/table";
 
@@ -354,16 +356,14 @@ export default function SubscriptionDetailsPage({
                 trialStatus === "trial"
                   ? "secondary"
                   : subscription.status === "active"
-                  ? "success"
-                  : subscription.status === "canceled"
-                  ? "destructive"
-                  : "outline"
+                  ? "default"
+                  : "destructive"
               }
             >
               {trialStatus === "trial" ? "Trial" : subscription.status}
             </Badge>
             {isTrialEnding && (
-              <Badge variant="warning" className="bg-yellow-500">
+              <Badge variant="secondary" className="bg-yellow-500">
                 <AlertTriangle className="mr-1 h-3 w-3" />
                 Trial ending soon
               </Badge>
@@ -664,9 +664,9 @@ export default function SubscriptionDetailsPage({
                             <Badge
                               variant={
                                 payment.status === "completed"
-                                  ? "success"
+                                  ? "default"
                                   : payment.status === "pending"
-                                  ? "outline"
+                                  ? "secondary"
                                   : "destructive"
                               }
                             >

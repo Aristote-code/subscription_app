@@ -26,28 +26,23 @@ export async function GET() {
 
     const userId = token.sub;
 
-    // Get all active subscriptions for the user
-    const subscriptions = await prisma.subscription.findMany({
+    // Get active subscriptions
+    const activeSubscriptions = await prisma.subscription.findMany({
       where: {
         userId,
-        isActive: true,
+        status: "active",
       },
       select: {
         id: true,
         name: true,
         price: true,
         billingCycle: true,
-        category: true,
         trialEndDate: true,
-        nextBillingDate: true,
       },
     });
 
     // Calculate total monthly spend
     let totalMonthlySpend = 0;
-
-    // Group subscriptions by category
-    const categoryMap = new Map<string, { count: number; spend: number }>();
 
     // Group subscriptions by billing cycle
     const billingCycleMap = new Map<string, { count: number; spend: number }>();
@@ -57,7 +52,7 @@ export async function GET() {
       [];
 
     // Process each subscription
-    subscriptions.forEach((sub) => {
+    activeSubscriptions.forEach((sub) => {
       // Calculate monthly cost based on billing cycle
       let monthlyCost = sub.price;
 
@@ -73,15 +68,6 @@ export async function GET() {
 
       totalMonthlySpend += monthlyCost;
 
-      // Add to category map
-      const category = sub.category || "Uncategorized";
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, { count: 0, spend: 0 });
-      }
-      const categoryData = categoryMap.get(category)!;
-      categoryData.count += 1;
-      categoryData.spend += monthlyCost;
-
       // Add to billing cycle map
       const cycle = formatBillingCycle(sub.billingCycle);
       if (!billingCycleMap.has(cycle)) {
@@ -96,8 +82,8 @@ export async function GET() {
       const nextMonth = new Date();
       nextMonth.setDate(today.getDate() + 30);
 
-      // Use nextBillingDate if available, otherwise use trialEndDate
-      const renewalDate = sub.nextBillingDate || sub.trialEndDate;
+      // Use trialEndDate for renewal date
+      const renewalDate = sub.trialEndDate;
 
       if (renewalDate && renewalDate > today && renewalDate <= nextMonth) {
         upcomingRenewals.push({
@@ -121,13 +107,6 @@ export async function GET() {
     const analyticsData = {
       totalMonthlySpend: parseFloat(totalMonthlySpend.toFixed(2)),
       totalYearlySpend: parseFloat((totalMonthlySpend * 12).toFixed(2)),
-      subscriptionsByCategory: Array.from(categoryMap.entries()).map(
-        ([category, data]) => ({
-          category,
-          count: data.count,
-          spend: parseFloat(data.spend.toFixed(2)),
-        })
-      ),
       subscriptionsByBillingCycle: Array.from(billingCycleMap.entries()).map(
         ([cycle, data]) => ({
           cycle,

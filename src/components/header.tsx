@@ -3,22 +3,21 @@
 import { useCallback, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Plus } from "lucide-react";
+import { MoonIcon, SunIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useTheme } from "next-themes";
 import UserMenu from "@/components/user-menu";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       <div className="container flex h-16 items-center">
         <MainNav />
         <div className="ml-auto flex items-center space-x-4">
-          <Suspense fallback={<div>Loading...</div>}>
-            <SearchAndActions />
-          </Suspense>
+          <ThemeToggle />
+          <UserMenu />
         </div>
       </div>
     </header>
@@ -31,83 +30,58 @@ function MainNav() {
   return (
     <div className="mr-4 flex">
       <Link href="/" className="mr-6 flex items-center space-x-2">
-        <span className="font-bold text-xl">TrialGuard</span>
+        <span className="font-bold text-xl text-foreground">TrialGuard</span>
       </Link>
       <nav className="flex items-center space-x-6 text-sm font-medium">
         <Link
           href="/dashboard"
-          className={`transition-colors hover:text-white ${
-            pathname === "/dashboard" ? "text-white" : "text-zinc-400"
+          className={`transition-colors hover:text-foreground ${
+            pathname === "/dashboard"
+              ? "text-foreground"
+              : "text-muted-foreground"
           }`}
         >
           Dashboard
-        </Link>
-        <Link
-          href="/dashboard/support"
-          className={`transition-colors hover:text-white ${
-            pathname === "/dashboard/support" ? "text-white" : "text-zinc-400"
-          }`}
-        >
-          Support
         </Link>
       </nav>
     </div>
   );
 }
 
-function SearchAndActions() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [searchTerm, setSearchTerm] = useState("");
+function ThemeToggle() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // Update search term from URL when component mounts
+  // After mounting, we have access to the theme
   useEffect(() => {
-    const query = searchParams.get("q");
-    if (query) {
-      setSearchTerm(query);
-    }
-  }, [searchParams]);
+    setMounted(true);
+  }, []);
 
-  // Debounce search to avoid too many URL updates
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (pathname === "/dashboard") {
-        const params = new URLSearchParams(searchParams);
-        if (searchTerm) {
-          params.set("q", searchTerm);
-        } else {
-          params.delete("q");
-        }
-        router.replace(`${pathname}?${params.toString()}`);
-      }
-    }, 300);
+  // If the component has not mounted yet, render a placeholder
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="rounded-full">
+        <div className="h-5 w-5" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, pathname, router, searchParams]);
+  const currentTheme = theme === "system" ? resolvedTheme : theme;
 
   return (
-    <div className="flex-1 flex items-center justify-end gap-4">
-      <div className="relative w-full max-w-md">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-        <Input
-          type="search"
-          placeholder="Search subscriptions..."
-          className="w-full pl-8 pr-4 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-400"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-      <Button
-        asChild
-        className="bg-zinc-800 hover:bg-zinc-700 text-white border-none shadow-none"
-      >
-        <Link href="/add-subscription">
-          <Plus className="mr-2 h-4 w-4" />
-          Add new subscription
-        </Link>
-      </Button>
-      <UserMenu />
-    </div>
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+      className="rounded-full"
+    >
+      {currentTheme === "dark" ? (
+        <SunIcon className="h-5 w-5 text-foreground" />
+      ) : (
+        <MoonIcon className="h-5 w-5 text-foreground" />
+      )}
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   );
 }

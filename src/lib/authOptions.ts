@@ -91,18 +91,42 @@ export const authOptions: NextAuthOptions = {
 
       // For JWT strategy (used by credentials provider)
       if (token) {
-        extendedSession.user.id = token.sub;
+        if (token.sub) {
+          extendedSession.user.id = token.sub;
+        } else {
+          extendedSession.user.id = (token.id as string) || "unknown";
+        }
+        // Set a default role if none exists
+        extendedSession.user.role = (token.role as string) || "USER";
       }
       // For database strategy (used by OAuth providers with adapter)
       else if (user) {
         extendedSession.user.id = user.id;
+        // If using an adapter, get the role from the user
+        const userWithRole = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
+        extendedSession.user.role = userWithRole?.role || "USER";
+      } else {
+        // Fallback for any other unexpected case
+        extendedSession.user.id = "unknown";
+        extendedSession.user.role = "USER";
       }
+
       return extendedSession;
     },
+
     async jwt({ token, user, account }) {
       // When signIn completes, this callback adds the user info to the token
       if (user) {
         token.id = user.id;
+        // Save role to token if available
+        if ("role" in user && user.role) {
+          token.role = user.role as string;
+        } else {
+          token.role = "USER"; // Default role
+        }
       }
       return token;
     },

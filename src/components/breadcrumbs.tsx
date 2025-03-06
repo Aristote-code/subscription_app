@@ -4,32 +4,43 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { HomeIcon, ChevronRight } from "lucide-react";
 
+type BreadcrumbSegment = {
+  name: string;
+  href: string;
+};
+
+type BreadcrumbsProps = {
+  customSegments?: BreadcrumbSegment[];
+};
+
 /**
  * Breadcrumbs component that shows the current path in the application
- * Automatically generates breadcrumbs based on the current URL path
+ * Can use automatic path-based breadcrumbs or custom segments
  */
-export function Breadcrumbs() {
+export function Breadcrumbs({ customSegments }: BreadcrumbsProps) {
   const pathname = usePathname();
 
   // Skip rendering breadcrumbs on the home page
-  if (pathname === "/") return null;
+  if (pathname === "/" && !customSegments) return null;
 
-  // Generate breadcrumb segments from the pathname
-  const segments = pathname
-    .split("/")
-    .filter(Boolean)
-    .map((segment, index, array) => {
-      // Convert slug format to title case
-      const label = segment
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+  // Use custom segments if provided, otherwise generate from pathname
+  const segments =
+    customSegments ||
+    pathname
+      .split("/")
+      .filter(Boolean)
+      .map((segment, index, array) => {
+        // Convert slug format to title case
+        const label = segment
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
 
-      // Create the href for this segment
-      const href = `/${array.slice(0, index + 1).join("/")}`;
+        // Create the href for this segment
+        const href = `/${array.slice(0, index + 1).join("/")}`;
 
-      return { label, href };
-    });
+        return { name: label, href };
+      });
 
   return (
     <nav
@@ -52,14 +63,14 @@ export function Breadcrumbs() {
             <ChevronRight className="h-4 w-4" />
             {index === segments.length - 1 ? (
               <span aria-current="page" className="font-medium text-foreground">
-                {segment.label}
+                {segment.name}
               </span>
             ) : (
               <Link
                 href={segment.href}
                 className="hover:text-foreground transition-colors"
               >
-                {segment.label}
+                {segment.name}
               </Link>
             )}
           </li>

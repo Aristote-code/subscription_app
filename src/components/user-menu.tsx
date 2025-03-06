@@ -16,11 +16,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// Define a type for the user object that safely includes optional properties
+type UserType = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+} | null;
+
 export default function UserMenu() {
   const router = useRouter();
   const { data: session } = useSession();
 
-  const user = session?.user || {
+  const user: UserType = session?.user || {
     name: "User",
     email: "user@example.com",
   };
@@ -39,9 +47,9 @@ export default function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar>
-            <AvatarImage src={user.image || ""} alt={user.name || "User"} />
+            <AvatarImage src={user?.image || ""} alt={user?.name || "User"} />
             <AvatarFallback className="bg-secondary text-foreground">
-              {user.name
+              {user?.name
                 ? user.name
                     .split(" ")
                     .map((n) => n[0])
@@ -58,8 +66,10 @@ export default function UserMenu() {
       >
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-sm font-medium">{user?.name || "User"}</p>
+            <p className="text-xs text-muted-foreground">
+              {user?.email || "user@example.com"}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-border" />

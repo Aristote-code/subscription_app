@@ -20,7 +20,6 @@ export async function GET(request: Request) {
       whereClause = {
         serviceName: {
           contains: search,
-          mode: "insensitive",
         },
       };
     } else if (service) {
@@ -80,7 +79,6 @@ export async function POST(request: Request) {
       where: {
         serviceName: {
           equals: serviceName,
-          mode: "insensitive",
         },
       },
     });

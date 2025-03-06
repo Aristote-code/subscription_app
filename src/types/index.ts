@@ -1,14 +1,15 @@
 import { Session } from "next-auth";
 
 /**
- * Extended NextAuth Session with user id
+ * Extended NextAuth Session with user id and role
  */
 export interface ExtendedSession extends Session {
   user: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    id?: string | null;
+    id: string;
+    role: string;
   };
 }
 

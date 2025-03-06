@@ -570,7 +570,7 @@ function DashboardContent({ initialSearchTerm = "" }) {
 
       {/* Subscription Details Drawer */}
       <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerContent direction="right">
+        <DrawerContent side="right">
           <div className="mx-auto w-full max-w-4xl">
             <DrawerHeader>
               <div className="flex items-center justify-between">
@@ -579,8 +579,7 @@ function DashboardContent({ initialSearchTerm = "" }) {
                 </DrawerTitle>
                 <DrawerClose asChild>
                   <Button variant="ghost" size="icon">
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
+                    <X className="h-5 w-5" />
                   </Button>
                 </DrawerClose>
               </div>

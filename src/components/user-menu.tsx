@@ -1,121 +1,98 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import Link from "next/link";
+import {
+  User,
+  Settings,
+  HelpCircle,
+  LogOut,
+  UserCog,
+  CreditCard,
+} from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { LifeBuoyIcon } from "lucide-react";
+import { ModeToggle } from "./mode-toggle";
 
-interface UserMenuProps {
-  user: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  };
-}
-
-export function UserMenu({ user }: UserMenuProps) {
+export default function UserMenu() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+
+  // This would come from your authentication context
+  const user = {
+    name: "Demo User",
+    email: "demo@example.com",
+    image: "/placeholder-user.jpg",
+  };
 
   const handleLogout = async () => {
-    setIsLoading(true);
-    try {
-      await signOut({ redirect: false });
-      toast.success("Logged out successfully");
-      router.push("/");
-      router.refresh();
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Get initials for avatar fallback
-  const getInitials = () => {
-    if (!user.name) return "U";
-    return user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
+    // Implement your logout logic here
+    router.push("/login");
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="focus:outline-none" disabled={isLoading}>
-        <Avatar className="h-8 w-8 cursor-pointer hover:scale-105 transition-transform">
-          <AvatarImage src={user.image || ""} alt={user.name || "User"} />
-          <AvatarFallback className="bg-zinc-800 text-white">
-            {getInitials()}
-          </AvatarFallback>
-        </Avatar>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-56 bg-black border border-zinc-800 text-white"
-      >
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-zinc-400">{user.email}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-zinc-800" />
-        <DropdownMenuItem
-          asChild
-          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
+    <div className="flex items-center gap-4">
+      <ModeToggle />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Avatar>
+              <AvatarImage src={user.image} alt={user.name} />
+              <AvatarFallback className="bg-secondary text-foreground">
+                {user.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-56 bg-background border border-border text-foreground"
+          align="end"
+          forceMount
         >
-          <Link href="/dashboard">Dashboard</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          asChild
-          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-        >
-          <Link href="/settings">Settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          asChild
-          className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800"
-        >
-          <Link href="/support">
-            <LifeBuoyIcon className="mr-2 h-4 w-4" />
-            Support
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-zinc-800" />
-        <DropdownMenuItem
-          className="cursor-pointer bg-black text-white hover:bg-zinc-900 focus:bg-zinc-900"
-          disabled={isLoading}
-          onClick={handleLogout}
-        >
-          {isLoading ? "Logging out..." : "Logout"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-border" />
+          <DropdownMenuGroup>
+            <DropdownMenuItem className="cursor-pointer hover:bg-secondary focus:bg-secondary">
+              <User className="mr-2 h-4 w-4" />
+              <Link href="/profile">Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer hover:bg-secondary focus:bg-secondary">
+              <Settings className="mr-2 h-4 w-4" />
+              <Link href="/settings">Settings</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer hover:bg-secondary focus:bg-secondary">
+              <CreditCard className="mr-2 h-4 w-4" />
+              <Link href="/billing">Billing</Link>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator className="bg-border" />
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="cursor-pointer bg-background text-foreground hover:bg-secondary focus:bg-secondary"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
-}
-
-// Default export with mock user data for development
-export default function DefaultUserMenu() {
-  const mockUser = {
-    name: "Demo User",
-    email: "user@example.com",
-    image: null,
-  };
-
-  return <UserMenu user={mockUser} />;
 }

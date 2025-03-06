@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,6 +12,15 @@ import {
   UserIcon,
   ChevronRightIcon,
   Share2Icon,
+  BarChart,
+  Bell,
+  Calendar,
+  CreditCard,
+  HelpCircle,
+  Menu,
+  Package,
+  Settings,
+  X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -22,8 +31,44 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import UserMenu from "./user-menu";
+
+const mainNavItems = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: HomeIcon,
+  },
+  {
+    title: "Subscriptions",
+    href: "/subscriptions",
+    icon: Package,
+  },
+  {
+    title: "Calendar",
+    href: "/calendar",
+    icon: Calendar,
+  },
+  {
+    title: "Reminders",
+    href: "/reminders",
+    icon: Bell,
+  },
+  {
+    title: "Billing",
+    href: "/billing",
+    icon: CreditCard,
+  },
+  {
+    title: "Analytics",
+    href: "/analytics",
+    icon: BarChart,
+  },
+];
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -31,6 +76,19 @@ export default function Sidebar() {
   const { theme, setTheme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Add this useEffect to prevent hydration errors
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent SSR hydration issues
+  if (!mounted) {
+    return null;
+  }
 
   const toggleSidebar = () => {
     setIsExpanded(!isExpanded);
@@ -57,109 +115,95 @@ export default function Sidebar() {
 
   return (
     <>
-      <div
-        className={`fixed left-0 top-0 bottom-0 z-40 h-full bg-black border-r border-zinc-800 flex flex-col transition-all duration-300 ease-in-out ${
-          isExpanded ? "w-64" : "w-16"
-        }`}
+      {/* Mobile sidebar toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-3 left-3 z-50 md:hidden"
+        onClick={() => setIsOpen(true)}
       >
-        {/* User profile section */}
-        <div className="p-4 border-b border-zinc-800 flex items-center">
-          <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
-            <UserIcon className="h-6 w-6 text-white" />
-          </div>
-          {isExpanded && (
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-white">Account</h3>
+        <Menu className="h-6 w-6" />
+      </Button>
+
+      <div
+        className={`fixed left-0 top-0 bottom-0 z-40 h-full bg-background border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 w-64`}
+      >
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+              <Package className="h-5 w-5" />
             </div>
-          )}
+            <span className="ml-2 font-bold text-lg">TrialGuard</span>
+          </div>
+
+          {/* Close button (mobile only) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 -right-3 h-6 w-6 rounded-full bg-background border border-border text-foreground hover:bg-secondary z-10 md:hidden"
+            onClick={() => setIsOpen(false)}
+          >
+            <X className="h-3 w-3" />
+          </Button>
         </div>
 
-        {/* Toggle button */}
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute top-4 -right-3 h-6 w-6 rounded-full bg-black border border-zinc-800 text-white hover:bg-zinc-800 z-10"
-          onClick={toggleSidebar}
-        >
-          <ChevronRightIcon
-            className={`h-4 w-4 transition-transform ${
-              isExpanded ? "rotate-180" : ""
-            }`}
-          />
-          <span className="sr-only">Toggle sidebar</span>
-        </Button>
-
-        {/* Navigation links */}
-        <nav className="flex-1 pt-4">
-          <ul className="space-y-2">
-            <li>
+        <div className="flex flex-col flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+          {mainNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
               <Link
-                href="/dashboard"
-                className={`flex items-center p-3 mx-2 rounded-md ${
-                  pathname === "/dashboard"
-                    ? "bg-zinc-800 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-zinc-800"
-                }`}
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all",
+                  isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                )}
+                onClick={() => setIsOpen(false)}
               >
-                <HomeIcon className="h-5 w-5 min-w-5" />
-                {isExpanded && <span className="ml-3">Home</span>}
+                <item.icon className="h-4 w-4" />
+                {item.title}
               </Link>
-            </li>
-            <li>
-              <Link
-                href="/dashboard/support"
-                className={`flex items-center p-3 mx-2 rounded-md ${
-                  pathname === "/dashboard/support"
-                    ? "bg-zinc-800 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-zinc-800"
-                }`}
-              >
-                <LifeBuoyIcon className="h-5 w-5 min-w-5" />
-                {isExpanded && <span className="ml-3">Contact Support</span>}
-              </Link>
-            </li>
-          </ul>
-        </nav>
+            );
+          })}
 
-        {/* Bottom links */}
-        <div className="p-4 border-t border-zinc-800">
-          <ul className="space-y-2">
-            <li>
-              <Button
-                variant="ghost"
-                className={`w-full justify-start text-gray-400 hover:text-white hover:bg-zinc-800 ${
-                  !isExpanded && "px-3"
-                }`}
-                onClick={() => setIsShareDialogOpen(true)}
-              >
-                <Share2Icon className="h-5 w-5 min-w-5" />
-                {isExpanded && <span className="ml-3">Invite People</span>}
-              </Button>
-            </li>
-            <li>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className={`flex items-center p-3 mx-2 rounded-md text-gray-400 hover:text-white hover:bg-zinc-800`}
-              >
-                {theme === "dark" ? (
-                  <SunIcon className="h-5 w-5 min-w-5" />
-                ) : (
-                  <MoonIcon className="h-5 w-5 min-w-5" />
-                )}
-                {isExpanded && (
-                  <span className="ml-3">
-                    {theme === "dark" ? "Light Mode" : "Dark Mode"}
-                  </span>
-                )}
-              </button>
-            </li>
-          </ul>
+          <Link
+            href="/dashboard/support"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all",
+              pathname === "/dashboard/support"
+                ? "bg-secondary text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            )}
+            onClick={() => setIsOpen(false)}
+          >
+            <HelpCircle className="h-4 w-4" />
+            Support
+          </Link>
+
+          <Link
+            href="/settings"
+            className={`w-full justify-start text-muted-foreground hover:text-foreground hover:bg-secondary ${
+              pathname === "/settings" ? "bg-secondary text-foreground" : ""
+            } flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-all`}
+            onClick={() => setIsOpen(false)}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+        </div>
+
+        <div className="p-4 border-t border-border">
+          <UserMenu />
         </div>
       </div>
 
       {/* Share/Invite Dialog */}
       <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
-        <DialogContent className="bg-black text-white border border-zinc-800 sm:max-w-md">
+        <DialogContent className="bg-background border-border text-foreground sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Invite People to TrialGuard
@@ -216,6 +260,55 @@ export default function Sidebar() {
               className="w-full border-zinc-800 hover:bg-zinc-800 text-white"
             >
               Share via WhatsApp
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Help dialog */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogTrigger asChild>
+          <Button
+            className={`flex items-center p-3 mx-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary`}
+          >
+            <HelpCircle className="h-4 w-4 mr-2" />
+            <span>Help</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-background border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Help & Resources</DialogTitle>
+            <DialogDescription>
+              Find help and support for using TrialGuard
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button
+              asChild
+              variant="outline"
+              className="whitespace-nowrap border-border hover:bg-secondary text-foreground"
+            >
+              <Link href="/dashboard/support">Support Center</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="whitespace-nowrap border-border hover:bg-secondary text-foreground"
+            >
+              <a
+                href="https://docs.trialguard.io"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Documentation
+              </a>
+            </Button>
+            <Button
+              variant="default"
+              className="w-full border-border hover:bg-secondary text-foreground"
+              onClick={() => setShowHelp(false)}
+            >
+              Close
             </Button>
           </div>
         </DialogContent>

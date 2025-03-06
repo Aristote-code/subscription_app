@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 /**
  * Help and Documentation Page
@@ -223,12 +224,14 @@ export default function HelpPage() {
   const filteredFaqs = filterItems(faqItems, searchQuery);
 
   return (
-    <div className="container max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Help & Support</h1>
-      <p className="text-muted-foreground mb-8">
-        Get answers to common questions, browse guides, or contact our support
-        team
-      </p>
+    <div className="container max-w-6xl mx-auto py-8 px-4">
+      <Breadcrumbs />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Help Center</h1>
+        <p className="text-muted-foreground mt-2">
+          Find answers to your questions and get support
+        </p>
+      </div>
 
       {/* Search bar */}
       <div className="relative max-w-md mx-auto mb-8">

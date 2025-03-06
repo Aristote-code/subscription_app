@@ -10,6 +10,7 @@ const nextConfig = {
   images: {
     domains: ["via.placeholder.com"],
   },
+  // Add any other config you need
 };
 
 module.exports = nextConfig;

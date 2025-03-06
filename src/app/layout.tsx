@@ -3,14 +3,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { Providers } from "./providers";
+import AuthProvider from "@/components/auth-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TrialGuard - Subscription Management App",
-  description:
-    "Track free trials, set reminders, and cancel subscriptions to avoid unexpected charges.",
+  title: "TrialGuard - Manage Your Subscriptions",
+  description: "Track and manage your subscriptions and free trials",
 };
 
 export default function RootLayout({
@@ -21,7 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers>
+        <AuthProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -30,9 +29,9 @@ export default function RootLayout({
             storageKey="trialguard-theme"
           >
             {children}
-            <Toaster />
+            <Toaster position="top-center" />
           </ThemeProvider>
-        </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -20,6 +20,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 /**
  * Interface for notification data
@@ -192,17 +193,8 @@ export default function NotificationsPage() {
 
   return (
     <div className="container max-w-4xl py-8">
+      <Breadcrumbs />
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          className="mb-2 gap-1 pl-0 text-muted-foreground"
-          asChild
-        >
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </Button>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Notifications</h1>

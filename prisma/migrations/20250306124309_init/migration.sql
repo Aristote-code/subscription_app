@@ -27,11 +27,13 @@ CREATE TABLE "Session" (
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "name" TEXT,
     "email" TEXT NOT NULL,
-    "emailVerified" DATETIME,
-    "password" TEXT,
-    "image" TEXT,
+    "password" TEXT NOT NULL,
+    "name" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'user',
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "resetPasswordToken" TEXT,
+    "resetPasswordExpires" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -46,24 +48,25 @@ CREATE TABLE "VerificationToken" (
 -- CreateTable
 CREATE TABLE "Subscription" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
     "price" REAL NOT NULL,
-    "currency" TEXT NOT NULL DEFAULT 'USD',
-    "billingCycle" TEXT NOT NULL DEFAULT 'MONTHLY',
-    "trialStartDate" DATETIME,
+    "billingCycle" TEXT NOT NULL DEFAULT 'monthly',
+    "startDate" DATETIME NOT NULL,
+    "endDate" DATETIME,
     "trialEndDate" DATETIME,
-    "nextBillingDate" DATETIME,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "cancellationUrl" TEXT,
+    "autoRenew" BOOLEAN NOT NULL DEFAULT true,
+    "userId" TEXT NOT NULL,
+    "categoryId" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'active',
     "logo" TEXT,
     "website" TEXT,
-    "category" TEXT,
+    "cancellationUrl" TEXT,
     "notes" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Subscription_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -74,7 +77,9 @@ CREATE TABLE "Reminder" (
     "sent" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Reminder_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "userId" TEXT NOT NULL,
+    CONSTRAINT "Reminder_subscriptionId_fkey" FOREIGN KEY ("subscriptionId") REFERENCES "Subscription" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "Reminder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -99,6 +104,30 @@ CREATE TABLE "CancellationGuide" (
     "updatedAt" DATETIME NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "SystemSettings" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "enableEmailNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "enableTrialEndReminders" BOOLEAN NOT NULL DEFAULT true,
+    "defaultReminderDays" INTEGER NOT NULL DEFAULT 3,
+    "maxSubscriptionsPerUser" INTEGER NOT NULL DEFAULT 50,
+    "maintenanceMode" BOOLEAN NOT NULL DEFAULT false
+);
+
+-- CreateTable
+CREATE TABLE "Category" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "color" TEXT,
+    "icon" TEXT,
+    "isDefault" BOOLEAN NOT NULL DEFAULT false,
+    "userId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Category_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
 
@@ -118,10 +147,19 @@ CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationTok
 CREATE INDEX "Subscription_userId_idx" ON "Subscription"("userId");
 
 -- CreateIndex
+CREATE INDEX "Subscription_categoryId_idx" ON "Subscription"("categoryId");
+
+-- CreateIndex
 CREATE INDEX "Reminder_subscriptionId_idx" ON "Reminder"("subscriptionId");
+
+-- CreateIndex
+CREATE INDEX "Reminder_userId_idx" ON "Reminder"("userId");
 
 -- CreateIndex
 CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CancellationGuide_serviceName_key" ON "CancellationGuide"("serviceName");
+
+-- CreateIndex
+CREATE INDEX "Category_userId_idx" ON "Category"("userId");

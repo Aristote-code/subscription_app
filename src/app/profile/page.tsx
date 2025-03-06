@@ -1,552 +1,314 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
 import {
-  ArrowLeft,
-  UploadCloud,
+  BadgeCheck,
+  Settings,
   User,
-  KeyRound,
-  AlertTriangle,
+  CreditCard,
+  Calendar,
+  Bell,
+  Clock,
 } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
-/**
- * Interface for user profile data
- */
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  image?: string;
-  createdAt: string;
-}
-
-/**
- * Profile page for managing user profile
- */
 export default function ProfilePage() {
-  const router = useRouter();
+  // Mock user data
+  const user = {
+    name: "John Doe",
+    email: "john.doe@example.com",
+    image: "/placeholder-avatar.jpg",
+    joinDate: "2023-01-15",
+    isPremium: true,
+  };
 
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Mock subscription stats
+  const stats = {
+    activeSubscriptions: 5,
+    expiringSoon: 2,
+    expired: 3,
+    moneySaved: 255.99,
+    averageTrialLength: 14.3,
+    cancelledTrials: 8,
+  };
 
-  // Form states
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  // Mock subscription activity
+  const recentActivity = [
+    {
+      id: 1,
+      type: "added",
+      service: "Netflix",
+      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    },
+    {
+      id: 2,
+      type: "expired",
+      service: "Amazon Prime",
+      date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    },
+    {
+      id: 3,
+      type: "reminder",
+      service: "Spotify",
+      date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+    },
+    {
+      id: 4,
+      type: "cancelled",
+      service: "Adobe Creative Cloud",
+      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+    },
+  ];
 
-  /**
-   * Fetch user profile data
-   */
-  const fetchUserProfile = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/user/profile");
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setUser(data.data);
-        setName(data.data.name || "");
-        setEmail(data.data.email || "");
-      } else {
-        throw new Error(data.error || "Failed to fetch user profile");
-      }
-    } catch (err) {
-      console.error("Failed to fetch user profile:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-    } finally {
-      setIsLoading(false);
+  // Activity icon mapping
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "added":
+        return <CreditCard className="h-4 w-4 text-blue-500" />;
+      case "expired":
+        return <Calendar className="h-4 w-4 text-red-500" />;
+      case "reminder":
+        return <Bell className="h-4 w-4 text-yellow-500" />;
+      case "cancelled":
+        return <Clock className="h-4 w-4 text-green-500" />;
+      default:
+        return <CreditCard className="h-4 w-4" />;
     }
   };
 
-  /**
-   * Update user profile
-   */
-  const updateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setUser(data.data);
-        toast.success("Profile updated successfully");
-      } else {
-        throw new Error(data.error || "Failed to update profile");
-      }
-    } catch (err) {
-      console.error("Failed to update profile:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update profile"
-      );
-    } finally {
-      setIsSaving(false);
+  // Activity description mapping
+  const getActivityDescription = (activity: (typeof recentActivity)[0]) => {
+    switch (activity.type) {
+      case "added":
+        return `Added ${activity.service} subscription`;
+      case "expired":
+        return `${activity.service} trial expired`;
+      case "reminder":
+        return `Reminder for ${activity.service} trial`;
+      case "cancelled":
+        return `Cancelled ${activity.service} before trial ended`;
+      default:
+        return `Activity for ${activity.service}`;
     }
-  };
-
-  /**
-   * Change password
-   */
-  const changePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setError(null);
-
-    // Validate passwords
-    if (newPassword !== confirmPassword) {
-      setError("New passwords do not match");
-      setIsSaving(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/user/change-password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Reset password fields
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        toast.success("Password changed successfully");
-      } else {
-        throw new Error(data.error || "Failed to change password");
-      }
-    } catch (err) {
-      console.error("Failed to change password:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-      toast.error(
-        err instanceof Error ? err.message : "Failed to change password"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  /**
-   * Delete account
-   */
-  const deleteAccount = async () => {
-    if (deleteConfirmation !== "DELETE") {
-      setError("Please type DELETE to confirm account deletion");
-      return;
-    }
-
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/user/profile", {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || `Error: ${response.status}`);
-      }
-
-      // Close dialog
-      setIsDeleteDialogOpen(false);
-
-      // Sign out and redirect to home
-      toast.success("Account deleted successfully");
-      await signOut({ callbackUrl: "/" });
-    } catch (err) {
-      console.error("Failed to delete account:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete account"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Initialize user data
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  // Format date for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(date);
   };
 
   return (
-    <div className="container max-w-3xl py-8">
+    <div className="flex flex-col p-8">
+      <Breadcrumbs />
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          className="mb-2 gap-1 pl-0 text-muted-foreground"
-          asChild
-        >
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold">Your Profile</h1>
-        <p className="text-muted-foreground">
-          Manage your account details and preferences
-        </p>
+        <h1 className="text-3xl font-bold">My Profile</h1>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        </div>
-      ) : error ? (
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* User Profile Card */}
         <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-red-500">{error}</div>
+          <CardHeader className="pb-2">
+            <CardTitle>Profile Information</CardTitle>
+            <CardDescription>Manage your personal details</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={user.image} alt={user.name} />
+                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <h2 className="text-xl font-bold mr-2">{user.name}</h2>
+                  {user.isPremium && (
+                    <HoverCard>
+                      <HoverCardTrigger asChild>
+                        <BadgeCheck className="h-5 w-5 text-blue-500" />
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-80">
+                        <div className="flex justify-between space-x-4">
+                          <div className="space-y-1">
+                            <h4 className="text-sm font-semibold">
+                              Premium Member
+                            </h4>
+                            <p className="text-sm">
+                              You have access to all premium features including
+                              advanced analytics and unlimited subscriptions.
+                            </p>
+                          </div>
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  )}
+                </div>
+                <p className="text-muted-foreground">{user.email}</p>
+                <p className="text-sm text-muted-foreground">
+                  Member since {format(new Date(user.joinDate), "MMMM yyyy")}
+                </p>
+              </div>
+            </div>
+
+            <Separator className="my-6" />
+
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center"
+                asChild
+              >
+                <a href="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </a>
+              </Button>
+            </div>
           </CardContent>
         </Card>
-      ) : (
-        <>
-          <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
-            </TabsList>
 
-            {/* Profile Tab */}
-            <TabsContent value="profile" className="space-y-6">
-              {/* User Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Information</CardTitle>
-                  <CardDescription>
-                    Update your personal information
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={updateProfile}>
-                  <CardContent className="space-y-4">
-                    <div className="flex flex-col items-center md:items-start md:flex-row md:gap-6">
-                      <div className="mb-4 md:mb-0">
-                        <div className="relative h-24 w-24 overflow-hidden rounded-full bg-gray-100">
-                          {user?.image ? (
-                            <img
-                              src={user.image}
-                              alt={user.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-primary/10">
-                              <User className="h-12 w-12 text-primary" />
-                            </div>
-                          )}
-                          <Button
-                            size="sm"
-                            className="absolute bottom-0 right-0 h-8 w-8 rounded-full p-0"
-                            type="button"
-                            disabled
-                          >
-                            <UploadCloud className="h-4 w-4" />
-                            <span className="sr-only">Upload photo</span>
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="space-y-4 flex-1 w-full">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Full Name</Label>
-                          <Input
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
+        {/* Stats Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription Stats</CardTitle>
+            <CardDescription>
+              Overview of your subscription management
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Active Subscriptions
+                </p>
+                <p className="text-2xl font-bold">
+                  {stats.activeSubscriptions}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Expiring Soon</p>
+                <p className="text-2xl font-bold text-yellow-500">
+                  {stats.expiringSoon}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Expired</p>
+                <p className="text-2xl font-bold text-gray-500">
+                  {stats.expired}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Money Saved</p>
+                <p className="text-2xl font-bold text-green-500">
+                  ${stats.moneySaved}
+                </p>
+              </div>
+            </div>
 
-                    <div className="space-y-2">
-                      <Label>Account Created</Label>
+            <Separator className="my-4" />
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">
+                    Trials Cancelled
+                  </span>
+                  <span className="font-medium">{stats.cancelledTrials}</span>
+                </div>
+                <Progress
+                  value={
+                    (stats.cancelledTrials /
+                      (stats.cancelledTrials + stats.expired)) *
+                    100
+                  }
+                  className="h-2"
+                />
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-muted-foreground">
+                    Cancellation Rate
+                  </span>
+                  <span>
+                    {Math.round(
+                      (stats.cancelledTrials /
+                        (stats.cancelledTrials + stats.expired)) *
+                        100
+                    )}
+                    %
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">
+                    Avg. Trial Length
+                  </span>
+                  <span className="font-medium">
+                    {stats.averageTrialLength} days
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>
+              Your subscription activity over the past month
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-8">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start">
+                  <div className="flex-shrink-0 mr-4 mt-1">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <p className="font-medium">
+                        {getActivityDescription(activity)}
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        {user?.createdAt ? formatDate(user.createdAt) : "N/A"}
+                        {format(activity.date, "MMM d, yyyy")}
                       </p>
                     </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
-
-              {/* Account Management Card */}
-              <Card className="border-red-200">
-                <CardHeader>
-                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                  <CardDescription>
-                    Permanent actions to your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="font-medium">Delete Account</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Permanently delete your account and all associated data
-                      </p>
-                    </div>
-                    <Dialog
-                      open={isDeleteDialogOpen}
-                      onOpenChange={setIsDeleteDialogOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button variant="destructive">Delete Account</Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle className="text-red-600 flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5" />
-                            Delete Your Account
-                          </DialogTitle>
-                          <DialogDescription>
-                            This action is permanent and cannot be undone. All
-                            your data, including subscriptions and settings,
-                            will be permanently deleted.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <Separator />
-                          <p className="text-sm font-medium">
-                            To confirm, type "DELETE" in the field below:
-                          </p>
-                          <Input
-                            value={deleteConfirmation}
-                            onChange={(e) =>
-                              setDeleteConfirmation(e.target.value)
-                            }
-                            className="border-red-300"
-                            placeholder="Type DELETE to confirm"
-                          />
-                          {error && (
-                            <p className="text-sm text-red-600">{error}</p>
-                          )}
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            variant="outline"
-                            onClick={() => setIsDeleteDialogOpen(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={deleteAccount}
-                            disabled={
-                              isSaving || deleteConfirmation !== "DELETE"
-                            }
-                          >
-                            {isSaving ? "Deleting..." : "Delete Account"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {activity.type === "cancelled"
+                        ? "Successfully cancelled before the trial period ended."
+                        : activity.type === "reminder"
+                        ? "You received a notification about this trial ending soon."
+                        : activity.type === "expired"
+                        ? "The trial period has ended. This subscription is now inactive."
+                        : "You added this subscription to your tracking list."}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              ))}
+            </div>
 
-            {/* Security Tab */}
-            <TabsContent value="security" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Password</CardTitle>
-                  <CardDescription>
-                    Change your password to keep your account secure
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={changePassword}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password">Current Password</Label>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="current-password"
-                          type="password"
-                          className="pl-10"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">New Password</Label>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="new-password"
-                          type="password"
-                          className="pl-10"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          required
-                          minLength={8}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">
-                        Confirm New Password
-                      </Label>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="confirm-password"
-                          type="password"
-                          className="pl-10"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          minLength={8}
-                        />
-                      </div>
-                    </div>
-                    {error && <p className="text-sm text-red-600">{error}</p>}
-                  </CardContent>
-                  <CardFooter className="flex justify-end">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? "Changing..." : "Change Password"}
-                    </Button>
-                  </CardFooter>
-                </form>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Sessions</CardTitle>
-                  <CardDescription>
-                    Manage devices where you're currently logged in
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-2 bg-primary/5 rounded">
-                      <div>
-                        <p className="font-medium">Current Device</p>
-                        <p className="text-sm text-muted-foreground">
-                          Last active just now
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm" disabled>
-                        Current
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => signOut({ callbackUrl: "/login" })}
-                  >
-                    Sign Out From All Devices
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+            <div className="mt-6 text-center">
+              <Button variant="outline" size="sm">
+                View All Activity
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

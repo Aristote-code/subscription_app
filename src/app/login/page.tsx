@@ -2,26 +2,42 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Github, Mail } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const urlError = searchParams.get("error") || "";
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!email || !password) {
-      toast.error("Please fill in all fields");
+      setError("Email and password are required");
       return;
     }
 
@@ -29,137 +45,114 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
+        redirect: false,
         email,
         password,
-        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
-        toast.error("Invalid credentials");
-        setIsLoading(false);
-        return;
+        setError(result.error);
+        toast.error(result.error);
+      } else {
+        toast.success("Logged in successfully!");
+        router.push(callbackUrl);
+        router.refresh();
       }
-
-      toast.success("Logged in successfully");
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Something went wrong. Please try again.");
+    } catch (error: any) {
+      setError(error.message || "Something went wrong");
+      toast.error(error.message || "Something went wrong");
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: string) => {
-    setIsLoading(true);
-    try {
-      await signIn(provider, { callbackUrl: "/dashboard" });
-    } catch (error) {
-      console.error(`${provider} login error:`, error);
-      toast.error("Something went wrong with social login. Please try again.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-primary">
-            TrialGuard
-          </h1>
-          <h2 className="mt-6 text-2xl font-bold tracking-tight">
-            Welcome back
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert className="h-8 w-8 text-primary" />
+            <span className="font-bold text-2xl">TrialGuard</span>
+          </div>
+          <h2 className="text-3xl font-bold text-center">
+            Sign in to your account
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to your account to manage your subscriptions
+          <p className="mt-2 text-center text-muted-foreground">
+            Welcome back! Please enter your details.
           </p>
         </div>
 
-        <div className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleSocialLogin("google")}
-              disabled={isLoading}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
+        {(error || urlError) && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error ||
+                (urlError === "CredentialsSignin"
+                  ? "Invalid email or password"
+                  : "An error occurred")}
+            </AlertDescription>
+          </Alert>
+        )}
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleSocialLogin("github")}
-              disabled={isLoading}
-            >
-              <Github className="mr-2 h-4 w-4" />
-              Continue with GitHub
-            </Button>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Login</CardTitle>
+            <CardDescription>
+              Enter your email and password to access your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-        </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-primary hover:underline"
-          >
-            Sign up
-          </Link>
-        </p>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !email || !password}
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

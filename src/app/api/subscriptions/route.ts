@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { getUserId, isAuthenticated } from "@/utils/auth";
 
 /**
  * GET handler for fetching subscriptions
@@ -9,21 +8,23 @@ import { getToken } from "next-auth/jwt";
  */
 export async function GET(request: Request) {
   try {
-    // Get user ID from JWT token
-    const cookieStore = cookies();
-    const token = await getToken({
-      req: { cookies: cookieStore } as any,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const isUserAuthenticated = await isAuthenticated();
 
-    if (!token || !token.sub) {
+    if (!isUserAuthenticated && process.env.NODE_ENV !== "development") {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const userId = token.sub;
+    const userId = await getUserId();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     // Fetch subscriptions from database
     const subscriptions = await prisma.subscription.findMany({
@@ -32,6 +33,14 @@ export async function GET(request: Request) {
       },
       include: {
         reminders: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            icon: true,
+          },
+        },
       },
       orderBy: {
         trialEndDate: "asc",
@@ -61,21 +70,23 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    // Get user ID from JWT token
-    const cookieStore = cookies();
-    const token = await getToken({
-      req: { cookies: cookieStore } as any,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const isUserAuthenticated = await isAuthenticated();
 
-    if (!token || !token.sub) {
+    if (!isUserAuthenticated && process.env.NODE_ENV !== "development") {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const userId = token.sub;
+    const userId = await getUserId();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const body = await request.json();
     console.log("Received subscription data:", body);
@@ -103,6 +114,8 @@ export async function POST(request: Request) {
         categoryId: body.categoryId,
         cancellationUrl: body.cancellationUrl,
         notes: body.notes,
+        autoRenew: body.autoRenew || true,
+        status: "active",
       },
     });
 

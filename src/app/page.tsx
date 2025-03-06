@@ -7,17 +7,17 @@ import {
   Bell,
   Calendar,
   CheckCircle,
-  ShieldCheck,
-  Plus,
   ChevronDown,
   ChevronUp,
-  ShieldAlert,
   LineChart,
+  ShieldAlert,
   Check,
 } from "lucide-react";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   // State for FAQ accordion
@@ -57,245 +57,259 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header Section - Black background with white text */}
-      <header className="sticky top-0 z-50 w-full bg-background text-foreground">
-        <div className="container mx-auto px-4 md:px-6 flex h-14 items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground antialiased">
+      {/* Header Section */}
+      <header className="sticky top-0 z-50 w-full backdrop-blur-sm bg-background/80 border-b border-border">
+        <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="h-6 w-6" />
-            <span className="font-bold">TrialGuard</span>
+            <ShieldAlert className="h-6 w-6 text-primary" />
+            <span className="font-bold text-xl">TrialGuard</span>
           </div>
-          <nav className="hidden md:flex gap-4 sm:gap-6">
-            <Link
-              href="#features"
-              className="text-sm font-medium hover:underline"
-            >
-              Features
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="text-sm font-medium hover:underline"
-            >
-              How It Works
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-sm font-medium hover:underline"
-            >
-              Pricing
-            </Link>
-            <Link href="#faq" className="text-sm font-medium hover:underline">
-              FAQ
-            </Link>
+          <nav className="hidden md:flex gap-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
           <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="text-sm font-medium hover:underline hidden sm:inline-block"
+              className="text-sm font-medium hover:text-primary hidden sm:inline-block"
             >
               Sign in
             </Link>
-            <Link
-              href="/signup"
-              className="bg-primary text-primary-foreground font-bold hover:bg-primary/80 rounded-lg px-5 py-2.5"
-            >
-              Get Started
-            </Link>
+            <Button asChild className="font-semibold" size="sm">
+              <Link href="/signup">Get Started</Link>
+            </Button>
           </div>
         </div>
       </header>
 
       <main className="flex-1">
-        {/* Hero Section - Black background with white text */}
-        <section className="container mx-auto px-4 md:px-6 py-12 md:py-24 lg:py-32">
-          <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
-            <div className="flex flex-col justify-center space-y-4">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+        {/* Hero Section - Clean version without login form */}
+        <section className="relative overflow-hidden py-20 md:py-32 border-b border-border">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(var(--primary),0.1),transparent_75%)]"></div>
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="space-y-6">
+                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none animate-fade-in">
                   Take Control of Your Free Trials
                 </h1>
-                <p className="text-muted-foreground md:text-xl">
+                <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto animate-fade-in animation-delay-100">
                   Stop paying for forgotten subscriptions. Track your free
                   trials and get timely reminders before they end.
                 </p>
-              </div>
-              <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link
-                  href="/signup"
-                  className="bg-primary text-primary-foreground hover:bg-primary/80 font-bold text-lg px-8 py-4 rounded-lg transition-all"
-                >
-                  Try for Free
-                </Link>
-              </div>
-            </div>
-            {/* Login form */}
-            <div className="w-full max-w-md mt-10 border rounded-lg shadow-lg p-6 bg-card">
-              <h2 className="text-2xl font-bold mb-6">Sign in</h2>
-              <form className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    placeholder="name@example.com"
-                    required
-                    type="email"
-                  />
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8 animate-fade-in animation-delay-200">
+                  <Button asChild size="lg" className="font-semibold">
+                    <Link href="/signup">Try for Free</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="font-semibold"
+                  >
+                    <Link href="#features">Learn More</Link>
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Forgot your password?
-                    </Link>
+
+                {/* Hero Image */}
+                <div className="mt-12 relative animate-fade-in animation-delay-300">
+                  <div className="aspect-video md:aspect-[16/9] rounded-xl overflow-hidden shadow-2xl border">
+                    <div className="w-full h-full bg-card/80 p-8 flex items-center justify-center">
+                      <div className="flex flex-col items-center justify-center space-y-4">
+                        <ShieldAlert className="h-16 w-16 text-primary" />
+                        <p className="text-xl font-medium">Dashboard Preview</p>
+                      </div>
+                    </div>
                   </div>
-                  <Input
-                    id="password"
-                    required
-                    type="password"
-                    placeholder="••••••••"
-                  />
                 </div>
-                <Button className="w-full" type="submit">
-                  Sign in
-                </Button>
-              </form>
-              <div className="mt-4 text-center text-sm">
-                Don't have an account?{" "}
-                <Link href="/signup" className="text-primary hover:underline">
-                  Sign up
-                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Section - White background with black text */}
+        {/* Features Section */}
         <section
-          className="w-full py-12 md:py-24 lg:py-32 bg-white text-black"
+          className="py-20 md:py-32 bg-card text-card-foreground border-b border-border"
           id="features"
         >
-          <div className="container px-4 md:px-6 mx-auto">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary mb-4">
+                Features
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Why Choose TrialGuard?
               </h2>
-              <p className="text-xl md:text-2xl text-gray-600">
+              <p className="mt-4 text-xl text-muted-foreground">
                 Take control of your subscriptions with these powerful tools.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Card 1 */}
-              <div className="flex flex-col items-center bg-black text-white border border-white p-8 rounded-lg h-64 hover:scale-105 transition-transform">
-                <div className="mb-6">
-                  <Calendar className="h-12 w-12 text-white" />
+              {/* Feature Card 1 */}
+              <div className="group relative overflow-hidden rounded-xl border bg-background p-6 shadow-md transition-all hover:shadow-xl hover-lift animate-fade-in animation-delay-100">
+                <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-primary/10 -z-10"></div>
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Calendar className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Track Subscriptions</h3>
-                <p className="text-center">
+                <h3 className="mb-2 text-xl font-bold">Track Subscriptions</h3>
+                <p className="text-muted-foreground">
                   Monitor all your trials in one place with countdowns.
                 </p>
               </div>
 
-              {/* Card 2 */}
-              <div className="flex flex-col items-center bg-black text-white border border-white p-8 rounded-lg h-64 hover:scale-105 transition-transform">
-                <div className="mb-6">
-                  <Bell className="h-12 w-12 text-white" />
+              {/* Feature Card 2 */}
+              <div className="group relative overflow-hidden rounded-xl border bg-background p-6 shadow-md transition-all hover:shadow-xl hover-lift animate-fade-in animation-delay-200">
+                <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-primary/10 -z-10"></div>
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Bell className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Set Reminders</h3>
-                <p className="text-center">
+                <h3 className="mb-2 text-xl font-bold">Set Reminders</h3>
+                <p className="text-muted-foreground">
                   Get notified before your trials end.
                 </p>
               </div>
 
-              {/* Card 3 */}
-              <div className="flex flex-col items-center bg-black text-white border border-white p-8 rounded-lg h-64 hover:scale-105 transition-transform">
-                <div className="mb-6">
-                  <CheckCircle className="h-12 w-12 text-white" />
+              {/* Feature Card 3 */}
+              <div className="group relative overflow-hidden rounded-xl border bg-background p-6 shadow-md transition-all hover:shadow-xl hover-lift animate-fade-in animation-delay-300">
+                <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-primary/10 -z-10"></div>
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <CheckCircle className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Cancel Easily</h3>
-                <p className="text-center">
+                <h3 className="mb-2 text-xl font-bold">Cancel Easily</h3>
+                <p className="text-muted-foreground">
                   Follow simple steps to cancel on time.
                 </p>
               </div>
             </div>
 
             <div className="text-center mt-12">
-              <Link
-                href="#how-it-works"
-                className="text-black hover:underline text-lg font-medium"
-              >
-                Explore All Features
-              </Link>
+              <Button asChild variant="outline" className="group">
+                <Link href="#how-it-works">
+                  Explore All Features
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* How It Works Section - Black background with white text */}
+        {/* How It Works Section */}
         <section
-          className="w-full py-12 md:py-24 lg:py-32 bg-card text-card-foreground"
+          className="py-20 md:py-32 border-b border-border relative"
           id="how-it-works"
         >
-          <div className="container mx-auto px-4 md:px-6 flex flex-col items-center">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              How TrialGuard Works
-            </h2>
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,rgba(var(--primary),0.1),transparent_70%)]"></div>
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary mb-4">
+                Process
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                How TrialGuard Works
+              </h2>
+              <p className="mt-4 text-xl text-muted-foreground">
+                Our simple three-step process helps you manage your
+                subscriptions effortlessly.
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
               <div className="flex flex-col items-center text-center">
-                <div className="bg-card text-primary border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center mb-6 text-xl font-bold">
-                  1
+                <div className="relative">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-background text-xl font-bold text-primary animate-float">
+                    1
+                  </div>
+                  <div className="absolute hidden md:block top-8 left-full h-0.5 w-full -translate-y-1/2 bg-gradient-to-r from-primary to-transparent"></div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">Add Subscriptions</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mt-6 text-xl font-bold">Add Subscriptions</h3>
+                <p className="mt-2 text-muted-foreground">
                   Track your active trials and recurring subscriptions in one
-                  place
+                  place.
                 </p>
               </div>
+
               <div className="flex flex-col items-center text-center">
-                <div className="bg-card text-primary border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center mb-6 text-xl font-bold">
-                  2
+                <div className="relative">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-background text-xl font-bold text-primary animate-float animation-delay-200">
+                    2
+                  </div>
+                  <div className="absolute hidden md:block top-8 left-full h-0.5 w-full -translate-y-1/2 bg-gradient-to-r from-primary to-transparent"></div>
                 </div>
-                <h3 className="text-xl font-bold mb-3">
+                <h3 className="mt-6 text-xl font-bold">
                   Get Personalized Alerts
                 </h3>
-                <p className="text-muted-foreground">
-                  Receive notifications before trial periods end
+                <p className="mt-2 text-muted-foreground">
+                  Receive notifications before trial periods end.
                 </p>
               </div>
+
               <div className="flex flex-col items-center text-center">
-                <div className="bg-card text-primary border-2 border-primary rounded-full w-12 h-12 flex items-center justify-center mb-6 text-xl font-bold">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-primary bg-background text-xl font-bold text-primary animate-float animation-delay-400">
                   3
                 </div>
-                <h3 className="text-xl font-bold mb-3">Save Money</h3>
-                <p className="text-muted-foreground">
-                  Cancel unwanted services before they start charging
+                <h3 className="mt-6 text-xl font-bold">Save Money</h3>
+                <p className="mt-2 text-muted-foreground">
+                  Cancel unwanted services before they start charging.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Testimonials Section - Black background with white text */}
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-background text-foreground">
+        {/* Testimonials Section */}
+        <section className="py-20 md:py-32 bg-card text-card-foreground border-b border-border">
           <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              What Our Users Say
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary mb-4">
+                Testimonials
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                What Our Users Say
+              </h2>
+              <p className="mt-4 text-xl text-muted-foreground">
+                Join thousands of satisfied users who've transformed how they
+                manage subscriptions.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {testimonials.map((testimonial, index) => (
                 <div
                   key={index}
-                  className="flex flex-col p-6 bg-card rounded-lg shadow-sm border"
+                  className="flex flex-col rounded-xl border bg-background p-6 shadow-sm transition-all hover:shadow-md"
                 >
+                  <div className="mb-4 text-primary">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path>
+                      <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path>
+                    </svg>
+                  </div>
                   <blockquote className="text-lg mb-4 flex-1">
-                    "{testimonial.quote}"
+                    {testimonial.quote}
                   </blockquote>
-                  <div className="flex items-center gap-4">
-                    <span className="relative flex shrink-0 overflow-hidden rounded-full w-10 h-10">
+                  <div className="flex items-center gap-4 pt-4 border-t">
+                    <span className="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 bg-muted">
                       <img
-                        className="aspect-square h-full w-full"
+                        className="aspect-square h-full w-full object-cover"
                         alt={testimonial.author}
                         src={testimonial.avatar}
                       />
@@ -313,60 +327,83 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ Section - Uses theme colors */}
+        {/* FAQ Section */}
         <section
-          className="w-full py-12 md:py-24 lg:py-32 bg-background text-foreground"
+          className="py-20 md:py-32 border-b border-border relative"
           id="faq"
         >
-          <div className="container px-4 md:px-6 mx-auto">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(var(--primary),0.1),transparent_75%)]"></div>
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary mb-4">
+                FAQ
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Frequently Asked Questions
               </h2>
+              <p className="mt-4 text-xl text-muted-foreground">
+                Find answers to the most common questions about TrialGuard.
+              </p>
             </div>
 
-            <div className="max-w-2xl mx-auto divide-y divide-border">
+            <div className="max-w-3xl mx-auto divide-y divide-border">
               {[
                 {
                   question: "How does TrialGuard work?",
                   answer:
-                    "Add your subscriptions, set reminders, and follow our cancellation guides.",
+                    "Add your subscriptions, set reminders, and follow our cancellation guides. We'll notify you before trials end so you never get charged for services you don't want.",
                 },
                 {
                   question: "Is my data secure?",
                   answer:
-                    "Yes, we use industry-standard encryption to protect your information.",
+                    "Yes, we use industry-standard encryption to protect your information. Your data is stored securely and we never share it with third parties.",
                 },
                 {
                   question: "Can I cancel anytime?",
                   answer:
-                    "Absolutely, cancel your Pro plan anytime with no hassle.",
+                    "Absolutely, cancel your Pro plan anytime with no hassle. We don't lock you into long-term contracts.",
                 },
                 {
                   question: "Do you offer a free version?",
                   answer:
-                    "Yes, we offer a free tier with limited features as well as a Pro version with additional benefits.",
+                    "Yes, we offer a free tier with limited features as well as a Pro version with additional benefits. The free version allows you to track up to 5 subscriptions.",
                 },
                 {
                   question: "How do I get support?",
                   answer:
-                    "Our support team is available 24/7 via email and chat to assist with any questions.",
+                    "Our support team is available 24/7 via email and chat to assist with any questions. Premium users get priority support with faster response times.",
                 },
               ].map((faq, index) => (
-                <div key={index} className="py-4">
+                <div key={index} className="py-6">
                   <button
                     onClick={() => toggleFaq(index)}
-                    className="flex justify-between items-center w-full text-left py-2 focus:outline-none"
+                    className="flex justify-between items-center w-full text-left focus:outline-none"
                   >
-                    <span className="font-bold text-lg">{faq.question}</span>
-                    {openFaqIndex === index ? (
-                      <ChevronUp className="w-5 h-5" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" />
-                    )}
+                    <span
+                      className={cn(
+                        "font-semibold text-lg",
+                        openFaqIndex === index && "text-primary"
+                      )}
+                    >
+                      {faq.question}
+                    </span>
+                    <div
+                      className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center transition-colors",
+                        openFaqIndex === index
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {openFaqIndex === index ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </div>
                   </button>
                   {openFaqIndex === index && (
-                    <div className="mt-2 text-muted-foreground">
+                    <div className="mt-4 text-muted-foreground animate-fade-in">
                       {faq.answer}
                     </div>
                   )}
@@ -375,123 +412,116 @@ export default function Home() {
             </div>
 
             <div className="text-center mt-12">
-              <Link href="#" className="text-foreground hover:underline">
-                Still have questions? Contact us
-              </Link>
+              <Button asChild variant="outline">
+                <Link href="/contact">Still have questions? Contact us</Link>
+              </Button>
             </div>
           </div>
         </section>
 
-        {/* Final CTA Section - Uses theme variables */}
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-card text-card-foreground">
+        {/* Final CTA Section */}
+        <section className="py-20 md:py-32 bg-card text-card-foreground">
           <div className="container px-4 md:px-6 mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Stop Overpaying?
-            </h2>
-            <p className="text-xl md:text-2xl mb-8 text-muted-foreground">
-              Join thousands who never miss a cancellation deadline.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/80 font-bold text-lg px-8 py-4 rounded-lg transition-all"
-              >
-                <Link href="/signup">Get Started for Free</Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground text-lg px-8 py-4 rounded-lg transition-all"
-              >
-                <Link href="#features">Learn More</Link>
-              </Button>
+            <div className="mx-auto max-w-3xl">
+              <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary mb-4 animate-fade-in">
+                Ready?
+              </div>
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-gradient animate-fade-in animation-delay-100">
+                Stop Paying for Unwanted Subscriptions
+              </h2>
+              <p className="mt-4 text-xl text-muted-foreground mb-8 animate-fade-in animation-delay-200">
+                Join thousands who never miss a cancellation deadline.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in animation-delay-300">
+                <Button asChild size="lg" className="font-semibold hover-lift">
+                  <Link href="/signup">Get Started Free</Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="font-semibold hover-lift"
+                >
+                  <Link href="#features">Learn More</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer - Black background with white text */}
-      <footer className="bg-background text-foreground py-12">
+      {/* Footer */}
+      <footer className="border-t border-border py-12">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {/* Column 1 - Logo and Tagline */}
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <ShieldAlert className="h-5 w-5 text-foreground" />
-                <span className="text-2xl font-bold">TrialGuard</span>
+                <ShieldAlert className="h-5 w-5 text-primary" />
+                <span className="text-xl font-bold">TrialGuard</span>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
                 Your subscription guardian
               </p>
             </div>
 
-            {/* Column 2 - Links */}
+            {/* Column 2 - Navigation */}
             <div>
+              <h3 className="font-semibold mb-3">Navigation</h3>
               <ul className="space-y-2">
-                <li>
-                  <Link
-                    className="text-muted-foreground hover:text-foreground"
-                    href="#features"
-                  >
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-muted-foreground hover:text-foreground"
-                    href="#how-it-works"
-                  >
-                    How It Works
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-muted-foreground hover:text-foreground"
-                    href="#pricing"
-                  >
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-muted-foreground hover:text-foreground"
-                    href="#faq"
-                  >
-                    FAQ
-                  </Link>
-                </li>
+                {navItems.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      href={item.href}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
-            {/* Column 3 - Links */}
+            {/* Column 3 - Legal Links */}
             <div>
+              <h3 className="font-semibold mb-3">Legal</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href="#" className="hover:underline">
+                  <Link
+                    href="/about"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     About
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:underline">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:underline">
+                  <Link
+                    href="/privacy"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:underline">
+                  <Link
+                    href="/terms"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
                     Terms
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 4 - Copyright */}
+            {/* Column 4 - Contact */}
             <div>
-              <p>© 2023 TrialGuard. All rights reserved.</p>
+              <h3 className="font-semibold mb-3">Contact</h3>
+              <p className="text-sm text-muted-foreground">
+                support@trialguard.com
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                © {new Date().getFullYear()} TrialGuard. All rights reserved.
+              </p>
             </div>
           </div>
         </div>

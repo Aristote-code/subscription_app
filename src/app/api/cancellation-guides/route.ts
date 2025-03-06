@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUserId } from "@/utils/auth";
 
 /**
  * GET handler for fetching cancellation guides
@@ -10,16 +11,27 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search");
+    const service = searchParams.get("service");
+
+    // Build the where clause based on search parameters
+    let whereClause = {};
+
+    if (search) {
+      whereClause = {
+        serviceName: {
+          contains: search,
+          mode: "insensitive",
+        },
+      };
+    } else if (service) {
+      whereClause = {
+        serviceName: service,
+      };
+    }
 
     // If search query is provided, filter guides by service name
     const guides = await prisma.cancellationGuide.findMany({
-      where: search
-        ? {
-            serviceName: {
-              contains: search,
-            },
-          }
-        : undefined,
+      where: whereClause,
       orderBy: {
         serviceName: "asc",
       },
@@ -42,6 +54,15 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
+    const userId = await getUserId();
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     // Validate required fields
@@ -55,9 +76,12 @@ export async function POST(request: Request) {
     }
 
     // Check if guide already exists
-    const existingGuide = await prisma.cancellationGuide.findUnique({
+    const existingGuide = await prisma.cancellationGuide.findFirst({
       where: {
-        serviceName,
+        serviceName: {
+          equals: serviceName,
+          mode: "insensitive",
+        },
       },
     });
 
@@ -73,7 +97,11 @@ export async function POST(request: Request) {
 
     // Create guide in database
     const guide = await prisma.cancellationGuide.create({
-      data: body,
+      data: {
+        serviceName,
+        steps: typeof steps === "string" ? steps : JSON.stringify(steps),
+        url: body.url,
+      },
     });
 
     return NextResponse.json({ success: true, data: guide }, { status: 201 });

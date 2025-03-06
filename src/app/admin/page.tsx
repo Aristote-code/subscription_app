@@ -1,17 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { toast } from "sonner";
+import {
+  Users,
+  Settings,
+  UserPlus,
+  Trash2,
+  Edit,
+  Shield,
+  Database,
+  Bell,
+  BarChart3,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   Table,
   TableBody,
@@ -20,27 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import {
-  ArrowLeft,
-  UserCog,
-  Settings,
-  Shield,
-  Users,
-  AlertTriangle,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
 
 /**
  * Interface for user data
@@ -49,44 +43,31 @@ interface User {
   id: string;
   name: string;
   email: string;
-  isAdmin: boolean;
+  role: string;
   createdAt: string;
-  subscriptionCount: number;
-}
-
-/**
- * Interface for system settings
- */
-interface SystemSettings {
-  enableEmailNotifications: boolean;
-  enableTrialEndReminders: boolean;
-  defaultReminderDays: number;
-  maxSubscriptionsPerUser: number;
-  maintenanceMode: boolean;
+  _count: {
+    subscriptions: number;
+    reminders: number;
+    notifications: number;
+  };
 }
 
 /**
  * Admin dashboard page
  */
-export default function AdminPage() {
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("users");
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [settings, setSettings] = useState<SystemSettings>({
-    enableEmailNotifications: true,
-    enableTrialEndReminders: true,
-    defaultReminderDays: 3,
-    maxSubscriptionsPerUser: 50,
-    maintenanceMode: false,
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
-  /**
-   * Fetch users data
-   */
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Fetch all users
   const fetchUsers = async () => {
     setIsLoading(true);
     setError(null);
@@ -95,150 +76,37 @@ export default function AdminPage() {
       const response = await fetch("/api/admin/users");
 
       if (!response.ok) {
+        if (response.status === 403) {
+          toast.error("You don't have permission to access the admin area");
+          router.push("/dashboard");
+          return;
+        }
         throw new Error(`Error: ${response.status}`);
       }
 
       const data = await response.json();
-
-      if (data.success) {
-        setUsers(data.data);
-      } else {
-        throw new Error(data.error || "Failed to fetch users");
-      }
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-
-      // For demo purposes, generate mock data if API fails
-      generateMockUsers();
+      setUsers(data.data);
+    } catch (error) {
+      console.error("Failed to fetch users:", error);
+      setError("Failed to fetch users. Please try again.");
+      toast.error("Failed to fetch users");
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Fetch system settings
-   */
-  const fetchSettings = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/admin/settings");
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSettings(data.data);
-      } else {
-        throw new Error(data.error || "Failed to fetch settings");
-      }
-    } catch (err) {
-      console.error("Failed to fetch settings:", err);
-      // Keep default settings
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Save system settings
-   */
-  const saveSettings = async () => {
-    setIsSaving(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/admin/settings", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success("Settings saved successfully");
-      } else {
-        throw new Error(data.error || "Failed to save settings");
-      }
-    } catch (err) {
-      console.error("Failed to save settings:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-      toast.error("Failed to save settings");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  /**
-   * Toggle user admin status
-   */
-  const toggleUserAdmin = async (userId: string, isAdmin: boolean) => {
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ isAdmin }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update local state
-        setUsers(
-          users.map((user) =>
-            user.id === userId ? { ...user, isAdmin } : user
-          )
-        );
-        toast.success(
-          `User ${isAdmin ? "promoted to admin" : "demoted from admin"}`
-        );
-      } else {
-        throw new Error(data.error || "Failed to update user");
-      }
-    } catch (err) {
-      console.error("Failed to update user:", err);
-      toast.error("Failed to update user");
-    }
-  };
-
-  /**
-   * Delete user
-   */
-  const deleteUser = async () => {
-    if (!selectedUser) return;
-
-    if (deleteConfirmation !== selectedUser.email) {
-      setError("Please type the user's email to confirm deletion");
+  // Delete a user
+  const handleDeleteUser = async (userId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this user? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
-    setIsSaving(true);
-    setError(null);
-
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/admin/users?id=${userId}`, {
         method: "DELETE",
       });
 
@@ -246,384 +114,212 @@ export default function AdminPage() {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Update local state
-        setUsers(users.filter((user) => user.id !== selectedUser.id));
-        setIsDeleteDialogOpen(false);
-        setSelectedUser(null);
-        setDeleteConfirmation("");
-        toast.success("User deleted successfully");
-      } else {
-        throw new Error(data.error || "Failed to delete user");
-      }
-    } catch (err) {
-      console.error("Failed to delete user:", err);
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
+      toast.success("User deleted successfully");
+      fetchUsers(); // Refresh the user list
+    } catch (error) {
+      console.error("Failed to delete user:", error);
       toast.error("Failed to delete user");
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  /**
-   * Generate mock users for demo
-   */
-  const generateMockUsers = () => {
-    const mockUsers: User[] = [
-      {
-        id: "1",
-        name: "Admin User",
-        email: "admin@example.com",
-        isAdmin: true,
-        createdAt: "2023-01-15T00:00:00.000Z",
-        subscriptionCount: 8,
-      },
-      {
-        id: "2",
-        name: "John Doe",
-        email: "john@example.com",
-        isAdmin: false,
-        createdAt: "2023-02-20T00:00:00.000Z",
-        subscriptionCount: 5,
-      },
-      {
-        id: "3",
-        name: "Jane Smith",
-        email: "jane@example.com",
-        isAdmin: false,
-        createdAt: "2023-03-10T00:00:00.000Z",
-        subscriptionCount: 3,
-      },
-      {
-        id: "4",
-        name: "Bob Johnson",
-        email: "bob@example.com",
-        isAdmin: false,
-        createdAt: "2023-04-05T00:00:00.000Z",
-        subscriptionCount: 7,
-      },
-      {
-        id: "5",
-        name: "Alice Williams",
-        email: "alice@example.com",
-        isAdmin: false,
-        createdAt: "2023-05-12T00:00:00.000Z",
-        subscriptionCount: 2,
-      },
-    ];
-
-    setUsers(mockUsers);
-    toast.info("Using demo data for admin dashboard");
-  };
-
-  // Format date for display
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(date);
-  };
-
-  // Initialize data
-  useEffect(() => {
-    fetchUsers();
-    fetchSettings();
-  }, []);
-
   return (
-    <div className="container py-8">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          className="mb-2 gap-1 pl-0 text-muted-foreground"
-          asChild
-        >
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+    <div className="flex flex-col p-8">
+      <Breadcrumbs />
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage users and system settings
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Manage users and system settings
-        </p>
+        <Button onClick={() => router.push("/dashboard")}>
+          Return to Dashboard
+        </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-        </div>
-      ) : error ? (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-red-500">{error}</div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users" className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </TabsTrigger>
-          </TabsList>
+      <Tabs
+        defaultValue={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-4">
+          <TabsTrigger value="users">
+            <Users className="h-4 w-4 mr-2" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="settings">
+            <Settings className="h-4 w-4 mr-2" />
+            System Settings
+          </TabsTrigger>
+          <TabsTrigger value="stats">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Statistics
+          </TabsTrigger>
+          <TabsTrigger value="logs">
+            <Database className="h-4 w-4 mr-2" />
+            Logs
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Users Tab */}
-          <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>View and manage user accounts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead>Subscriptions</TableHead>
-                        <TableHead>Admin</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">
-                            {user.name}
-                          </TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{formatDate(user.createdAt)}</TableCell>
-                          <TableCell>{user.subscriptionCount}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={user.isAdmin}
-                              onCheckedChange={(checked) =>
-                                toggleUserAdmin(user.id, checked)
-                              }
-                              aria-label="Toggle admin status"
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>
+                    Manage user accounts and permissions
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-                <CardDescription>
-                  Configure global application settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="email-notifications">
-                        Email Notifications
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Enable email notifications for all users
-                      </p>
-                    </div>
-                    <Switch
-                      id="email-notifications"
-                      checked={settings.enableEmailNotifications}
-                      onCheckedChange={(checked) =>
-                        setSettings({
-                          ...settings,
-                          enableEmailNotifications: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="trial-reminders">
-                        Trial End Reminders
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Send reminders when trial periods are ending
-                      </p>
-                    </div>
-                    <Switch
-                      id="trial-reminders"
-                      checked={settings.enableTrialEndReminders}
-                      onCheckedChange={(checked) =>
-                        setSettings({
-                          ...settings,
-                          enableTrialEndReminders: checked,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="reminder-days">Default Reminder Days</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Days before trial end to send reminder
-                    </p>
-                    <Input
-                      id="reminder-days"
-                      type="number"
-                      min={1}
-                      max={30}
-                      value={settings.defaultReminderDays}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          defaultReminderDays: parseInt(e.target.value) || 3,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="max-subscriptions">
-                      Max Subscriptions Per User
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Maximum number of subscriptions a user can create
-                    </p>
-                    <Input
-                      id="max-subscriptions"
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={settings.maxSubscriptionsPerUser}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          maxSubscriptionsPerUser:
-                            parseInt(e.target.value) || 50,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4">
-                    <div className="space-y-0.5">
-                      <Label
-                        htmlFor="maintenance-mode"
-                        className="text-red-500 font-medium"
-                      >
-                        Maintenance Mode
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Put the application in maintenance mode
-                      </p>
-                    </div>
-                    <Switch
-                      id="maintenance-mode"
-                      checked={settings.maintenanceMode}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, maintenanceMode: checked })
-                      }
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button onClick={saveSettings} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save Settings"}
+                <Button variant="outline" className="flex items-center">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add User
                 </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8 text-red-500">{error}</div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8">No users found</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Subscriptions</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.name || "Unnamed User"}
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              user.role === "ADMIN" ? "destructive" : "default"
+                            }
+                            className="flex w-fit items-center"
+                          >
+                            {user.role === "ADMIN" && (
+                              <Shield className="h-3 w-3 mr-1" />
+                            )}
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{user._count.subscriptions}</TableCell>
+                        <TableCell>
+                          {format(new Date(user.createdAt), "MMM d, yyyy")}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">Edit</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              disabled={user.role === "ADMIN"} // Don't allow deleting admins
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Delete User Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="text-red-600 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Delete User
-            </DialogTitle>
-            <DialogDescription>
-              This action is permanent and cannot be undone. All user data,
-              including subscriptions and settings, will be permanently deleted.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <p className="font-medium">User details:</p>
-              <p>Name: {selectedUser?.name}</p>
-              <p>Email: {selectedUser?.email}</p>
-              <p>Subscriptions: {selectedUser?.subscriptionCount}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-email">
-                Type <span className="font-medium">{selectedUser?.email}</span>{" "}
-                to confirm:
-              </Label>
-              <Input
-                id="confirm-email"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                className="border-red-300"
-              />
-              {error && <p className="text-sm text-red-600">{error}</p>}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsDeleteDialogOpen(false);
-                setSelectedUser(null);
-                setDeleteConfirmation("");
-                setError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={deleteUser}
-              disabled={isSaving || deleteConfirmation !== selectedUser?.email}
-            >
-              {isSaving ? "Deleting..." : "Delete User"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* System Settings Tab */}
+        <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Settings</CardTitle>
+              <CardDescription>
+                Configure global system settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Email Notifications</h3>
+                  <Separator />
+                  <p className="text-sm text-muted-foreground">
+                    Coming soon - Configure email settings for notifications
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Database Backups</h3>
+                  <Separator />
+                  <p className="text-sm text-muted-foreground">
+                    Coming soon - Schedule automatic backups
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">API Keys</h3>
+                  <Separator />
+                  <p className="text-sm text-muted-foreground">
+                    Coming soon - Manage API keys for integrations
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Stats Tab */}
+        <TabsContent value="stats" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Statistics</CardTitle>
+              <CardDescription>
+                Overview of system usage and metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Statistics feature coming soon
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Logs Tab */}
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Logs</CardTitle>
+              <CardDescription>View system logs and activities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center py-8 text-muted-foreground">
+                Logs feature coming soon
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

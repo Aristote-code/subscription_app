@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { getUserId } from "@/utils/auth";
 
 /**
  * PUT handler for marking all notifications as read
@@ -9,21 +8,14 @@ import { getToken } from "next-auth/jwt";
  */
 export async function PUT(request: Request) {
   try {
-    // Get user ID from JWT token
-    const cookieStore = cookies();
-    const token = await getToken({
-      req: { cookies: cookieStore } as any,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const userId = await getUserId();
 
-    if (!token || !token.sub) {
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
-
-    const userId = token.sub;
 
     // Update all unread notifications for the user
     const result = await prisma.notification.updateMany({

@@ -1,201 +1,100 @@
-### `README.md` Content for TrialGuard
+# TrialGuard - Subscription Management App
 
-```markdown
-# TrialGuard
-
-TrialGuard is a subscription management web app built to help users track free trials, set reminders, and cancel subscriptions to avoid unexpected charges. With an intuitive interface and smart features, it ensures users never get charged for trials they forget to cancel.
-
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-- [Coding Standards](#coding-standards)
-- [Development Guidelines](#development-guidelines)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [References for AI](#references-for-ai)
-
-## Project Overview
-TrialGuard addresses the common problem of users forgetting to cancel free trials, leading to unwanted charges. Key functionalities include:
-- Tracking subscriptions with trial start/end dates.
-- Setting reminders before trials end (e.g., 5 days prior).
-- Providing cancellation instructions for popular services and a search option for others.
-
-The app is built with a focus on user experience (intuitive flows) and code quality (senior-level practices).
+TrialGuard is a modern web application that helps you track and manage your subscription trials and ongoing subscriptions to prevent unexpected charges. Never forget to cancel a free trial again!
 
 ## Features
-- **User Authentication:** Sign up, log in, and password recovery.
-- **Dashboard:** View all subscriptions with trial end dates and statuses.
-- **Subscription Management:** Add, edit, or delete subscriptions with trial details.
-- **Reminders:** Email notifications before trials end.
-- **Cancellation Guidance:** Pre-filled steps for popular services (e.g., AWS, Amazon) and a search/community-driven mechanism for others.
-- **Settings:** Customize user profile and notification preferences.
+
+- **Track Subscriptions**: Keep all your trial periods and recurring subscriptions in one place
+- **Visual Status Indicators**: Quickly identify active, ending soon, and expired subscriptions
+- **Smart Reminders**: Get notified before your free trials end
+- **Cancellation Guidance**: Access step-by-step instructions for cancelling popular services
+- **Community Contributions**: Share and benefit from other users' cancellation experiences
+- **Detailed Subscription View**: Monitor trial progress, view key dates, and edit subscription details
 
 ## Tech Stack
-- **Frontend:** Next.js (React), TypeScript, Shadcn UI
-- **Backend:** Next.js API Routes
-- **Database:** PostgreSQL with Prisma
-- **Authentication:** JWT
-- **Reminders:** Node-Cron for scheduling, SendGrid for emails
-- **Testing:** Jest, React Testing Library
-- **Deployment:** Vercel
 
-## Project Structure
-The project follows a modular structure to keep code organized and maintainable:
+- **Frontend**: Next.js 14+ with React and TypeScript
+- **UI Components**: Shadcn UI library with Tailwind CSS
+- **State Management**: React Hooks
+- **Database**: SQL Server with Prisma ORM
+- **Authentication**: NextAuth.js
 
-```
-trialguard/
-├── src/
-│   ├── components/         # Reusable UI components
-│   │   └── ui/            # Shadcn UI components
-│   ├── pages/             # Next.js pages (e.g., dashboard.tsx)
-│   │   └── api/           # API routes (e.g., subscriptions.ts)
-│   ├── lib/               # Prisma setup and database utilities
-│   ├── utils/             # Utility functions (e.g., date formatting)
-│   ├── config/            # Configuration files (e.g., database.ts)
-│   ├── styles/            # Global styles (e.g., globals.css)
-│   └── types/             # TypeScript type definitions
-├── prisma/                # Prisma schema and migrations
-├── tests/                 # Unit and integration tests
-├── public/                # Static assets (e.g., images)
-├── .env                   # Environment variables
-├── .cursorrules           # Cursor AI rules
-└── README.md              # Project documentation
-```
+## Getting Started
 
-## Setup Instructions
-Follow these steps to set up the project locally:
+### Prerequisites
 
-1. **Clone the Repository:**
-   ```bash
+- Node.js 18.x or later
+- SQL Server instance
+- Git
+
+### Installation
+
+1. Clone the repository
+
+   ```
    git clone https://github.com/yourusername/trialguard.git
    cd trialguard
    ```
 
-2. **Install Dependencies:**
-   ```bash
+2. Install dependencies
+
+   ```
    npm install
    ```
 
-3. **Set Up Environment Variables:**
-   - Create a `.env` file in the root directory.
-   - Add the following variables (replace with your values):
-     ```
-     DATABASE_URL="postgresql://user:password@localhost:5432/trialguard"
-     NEXTAUTH_SECRET="your-nextauth-secret"
-     SENDGRID_API_KEY="your-sendgrid-api-key"
-     ```
+3. Configure environment variables
+   Create a `.env` file in the root directory with the following:
 
-4. **Set Up the Database:**
-   - Ensure PostgreSQL is installed and running.
-   - Run Prisma migrations:
-     ```bash
-     npx prisma migrate dev --name init
-     ```
+   ```
+   DATABASE_URL="sqlserver://localhost:1433;database=trialguard;user=sa;password=YourStrong@Passw0rd;trustServerCertificate=true"
+   NEXTAUTH_URL="http://localhost:3000"
+   NEXTAUTH_SECRET="your-secret-key"
+   ```
 
-5. **Run the Development Server:**
-   ```bash
+4. Initialize the database
+
+   ```
+   npx prisma migrate dev --name init
+   ```
+
+5. Start the development server
+
+   ```
    npm run dev
    ```
-   - Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-## Coding Standards
-These standards ensure consistency and quality across the codebase:
+6. Open your browser and navigate to `http://localhost:3000`
 
-- **Indentation:** Use 2-space indentation.
-- **Naming Conventions:** Use camelCase for variables, functions, and components.
-- **TypeScript:** Define types/interfaces for all data (e.g., `interface Subscription { id: number; name: string; trialEnds: Date; }`).
-- **Components:** Write functional components with React hooks (e.g., `useState`, `useEffect`).
-- **Documentation:** Use JSDoc for all functions and components (e.g., `/** Component to display a subscription */`).
-- **File Naming:** Use lowercase with hyphens for files (e.g., `subscription-card.tsx`).
+## Usage
 
-## Development Guidelines
-Follow these guidelines to maintain senior-level code quality:
+### Adding a Subscription
 
-- **Modularity:** Keep components small and focused (e.g., `SubscriptionCard` handles only rendering a subscription).
-- **API Routes:** Use Next.js API routes for backend logic (e.g., `/api/subscriptions`).
-  - Type requests and responses (e.g., `NextApiRequest`, `NextApiResponse`).
-  - Return JSON with a consistent structure: `{ success: boolean, data: any, error?: string }`.
-- **Database:** Use Prisma for all database operations.
-  - Define models in `prisma/schema.prisma`.
-  - Use async/await for queries (e.g., `await prisma.subscription.findMany()`).
-- **Reminders:**
-  - Schedule with `node-cron` to check trial end dates daily.
-  - Send emails via SendGrid for reminders.
-- **Shadcn UI:** Use components like `<Button>`, `<Table>`, and `<Drawer>` for a consistent look and accessibility.
-- **Error Handling:** Handle errors gracefully (e.g., try-catch in API routes, display user-friendly messages).
+1. Click the "Add Subscription" button
+2. Select a service or enter a custom service name
+3. Set the trial start date and either:
+   - Specify the trial length in days, or
+   - Set the end date directly
+4. Set when you want to be reminded before the trial ends
+5. Click "Add Subscription"
 
-## Testing
-Testing ensures the app is reliable:
+### Managing Subscriptions
 
-- **Unit Tests:** Use Jest for logic (e.g., subscription date calculations).
-- **Component Tests:** Use React Testing Library for UI components.
-- **API Tests:** Test API routes for success and error cases.
-- **Setup:**
-   ```bash
-   npm run test
-   ```
+- **View Details**: Click on any subscription row to view detailed information
+- **Edit Subscription**: Within the details view, click "Edit" to modify subscription information
+- **Delete Subscription**: Remove subscriptions you no longer want to track
+- **Sort and Filter**: Organize your subscriptions by service name, end date, or status
 
-## Deployment
-The app is deployed on Vercel:
+### Cancellation Guide
 
-1. Push code to your GitHub repository.
-2. Connect the repository to Vercel.
-3. Set environment variables in Vercel’s dashboard (same as `.env`).
-4. Deploy with:
-   ```bash
-   vercel deploy
-   ```
+The application provides step-by-step cancellation instructions for popular services. For other services:
+
+1. Search for cancellation steps
+2. Contribute your own cancellation instructions to help other users
 
 ## Contributing
-Contributions are welcome! Follow these steps:
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/your-feature`).
-3. Commit changes (`git commit -m "Add your feature"`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a pull request.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## References for AI
-These references help the AI assist with development:
+## License
 
-- @ src/config/database.ts (Database connection setup)
-- @ src/components/SubscriptionCard.tsx (Example component)
-- @ src/pages/api/subscriptions.ts (Example API route)
-- @ tests/subscription.test.ts (Example test file)
-```
-
----
-
-### How to Use This
-
-1. **Create or Open `README.md`:**
-   - If you don’t already have a `README.md` in your project root (`trialguard/`), create one.
-   - Open it in Cursor or your preferred editor.
-
-2. **Paste the Content:**
-   - Copy the Markdown content above and paste it into `README.md`.
-
-3. **Customize as Needed:**
-   - **Repository URL:** Replace `https://github.com/yourusername/trialguard.git` with your actual repository URL.
-   - **Environment Variables:** Add any additional variables your app needs (e.g., for authentication or email services).
-   - **References for AI:** Add more file references if there are other key files you want the AI to use as examples.
-
-4. **Save the File:**
-   - Save `README.md` to ensure the AI can reference it.
-
----
-
-### Ensuring the AI Follows the `README`
-
-- **Reference in Rules:** In your `subscription-app-rules.mdc`, you’ve already added a reference to the `README`:
-  ```markdown
-  ## References
-  - @ ../README.md (Project overview and guidelines)
-  ```
-  This ensures the AI uses the `README` as a guide.
-- **Auto Attach:** Your existing `Auto Attach` patterns (`*.ts,*.tsx,src/**/*/*.ts,src/**/*/*.tsx,src/config/**/*.json,*.test.ts,*.test.tsx`) ensure the rules apply to most files, so the AI will reference the `README` when relevant.
-- **Prompt the AI:** When asking for help, you can mention the `README` explicitly (e.g., "Generate a new component following the guidelines in the README").
+This project is licensed under the MIT License - see the LICENSE file for details.

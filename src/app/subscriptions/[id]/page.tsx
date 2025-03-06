@@ -46,6 +46,7 @@ import {
   TableHead,
   TableRow,
 } from "@/components/ui/table";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 /**
  * Interface for Subscription data
@@ -295,9 +296,15 @@ export default function SubscriptionDetailsPage({
 
   if (isLoading) {
     return (
-      <div className="container max-w-6xl mx-auto py-10 px-4">
-        <div className="flex items-center justify-center h-[50vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container max-w-4xl py-8">
+        <Breadcrumbs
+          customSegments={[
+            { name: "Subscriptions", href: "/dashboard" },
+            { name: "Loading...", href: "#" },
+          ]}
+        />
+        <div className="flex justify-center py-20">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
       </div>
     );
@@ -305,22 +312,22 @@ export default function SubscriptionDetailsPage({
 
   if (error || !subscription) {
     return (
-      <div className="container max-w-6xl mx-auto py-10 px-4">
-        <div className="flex flex-col items-center justify-center h-[50vh] gap-4">
-          <Alert variant="destructive">
-            <Info className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              {error || "Subscription not found. It may have been deleted."}
-            </AlertDescription>
-          </Alert>
-          <Button asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
+      <div className="container max-w-4xl py-8">
+        <Breadcrumbs
+          customSegments={[
+            { name: "Subscriptions", href: "/dashboard" },
+            { name: "Error", href: "#" },
+          ]}
+        />
+        <Alert variant="destructive" className="my-8">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error || "Failed to load subscription details. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => router.push("/dashboard")}>
+          Return to Dashboard
+        </Button>
       </div>
     );
   }
@@ -337,18 +344,16 @@ export default function SubscriptionDetailsPage({
     differenceInDays(new Date(subscription.trialEndDate), new Date()) <= 3;
 
   return (
-    <div className="container max-w-6xl mx-auto py-8 px-4">
+    <div className="container max-w-4xl py-8">
+      <Breadcrumbs
+        customSegments={[
+          { name: "Subscriptions", href: "/dashboard" },
+          { name: subscription.name, href: `/subscriptions/${params.id}` },
+        ]}
+      />
       {/* Back button and title */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div className="flex flex-col gap-2">
-          <Button
-            variant="ghost"
-            className="p-0 h-9 mb-2"
-            onClick={() => router.push("/dashboard")}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
           <h1 className="text-3xl font-bold">{subscription.name}</h1>
           <div className="flex items-center gap-2">
             <Badge

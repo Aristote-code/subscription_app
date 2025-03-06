@@ -6,9 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+// Note: SQLite doesn't support enums, so we'll use strings with constraints
 
 model Account {
   id                 String  @id @default(cuid())
@@ -40,9 +42,12 @@ model Session {
 model User {
   id                    String        @id @default(cuid())
   email                 String        @unique
-  password              String
+  password              String?       // Make password optional for social logins
   name                  String?
-  role                  String        @default("user")
+  role                  String        @default("USER") // Use string with USER, MANAGER, or ADMIN values
+  image                 String?       // Add profile image field
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   accounts              Account[]
   sessions              Session[]
   subscriptions         Subscription[]
@@ -52,8 +57,6 @@ model User {
   emailVerified         Boolean       @default(false)
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
 }
 
 model VerificationToken {
@@ -75,10 +78,10 @@ model Subscription {
   trialEndDate        DateTime?
   autoRenew           Boolean       @default(true)
   userId              String
-  user                User          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                User          @relation(fields: [userId], references: [id])
   reminders           Reminder[]
   categoryId          String?
-  category            Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  category            Category?     @relation(fields: [categoryId], references: [id])
   status              String        @default("active") // active, cancelled, expired, trial
   logo                String?
   website             String?
@@ -100,7 +103,7 @@ model Reminder {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   userId          String
-  user            User          @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user            User          @relation(fields: [userId], references: [id])
 
   @@index([subscriptionId])
   @@index([userId])
@@ -145,7 +148,7 @@ model Category {
   icon        String?
   isDefault   Boolean       @default(false)
   userId      String?
-  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user        User?         @relation(fields: [userId], references: [id])
   subscriptions Subscription[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

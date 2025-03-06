@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { getToken } from "next-auth/jwt";
+import { getUserId } from "@/utils/auth";
 
 /**
  * GET handler for fetching reminders
@@ -9,21 +8,15 @@ import { getToken } from "next-auth/jwt";
  */
 export async function GET(request: Request) {
   try {
-    // Get user ID from JWT token
-    const cookieStore = cookies();
-    const token = await getToken({
-      req: { cookies: cookieStore } as any,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const userId = await getUserId();
 
-    if (!token || !token.sub) {
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const userId = token.sub;
     const url = new URL(request.url);
     const subscriptionId = url.searchParams.get("subscriptionId");
 
@@ -73,21 +66,15 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    // Get user ID from JWT token
-    const cookieStore = cookies();
-    const token = await getToken({
-      req: { cookies: cookieStore } as any,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const userId = await getUserId();
 
-    if (!token || !token.sub) {
+    if (!userId) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
         { status: 401 }
       );
     }
 
-    const userId = token.sub;
     const body = await request.json();
 
     // Validate required fields

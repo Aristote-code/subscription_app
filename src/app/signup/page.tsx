@@ -8,9 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Github, Mail } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -20,30 +29,38 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     // Validation
     if (!name || !email || !password || !confirmPassword) {
-      toast.error("Please fill in all fields");
+      setError("All fields are required");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
     if (!acceptTerms) {
-      toast.error("Please accept the terms and conditions");
+      setError("You must accept the terms and conditions");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Register the user
+      // Register user
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -59,185 +76,161 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to register");
+        throw new Error(data.message || "Registration failed");
       }
 
-      toast.success("Account created successfully");
+      toast.success("Account created successfully!");
 
-      // Sign in the user after successful registration
+      // Log in the user automatically
       const result = await signIn("credentials", {
+        redirect: false,
         email,
         password,
-        callbackUrl: "/dashboard",
       });
 
       if (result?.error) {
-        console.error("Sign in after registration failed:", result.error);
-        // Still redirect to login since registration was successful
-        router.push("/login");
-        return;
+        // If login fails after registration, redirect to login page
+        toast.info("Please sign in with your new account");
+        router.push(`/login?email=${encodeURIComponent(email)}`);
+      } else {
+        // If login succeeds, redirect to dashboard
+        router.push("/dashboard");
+        router.refresh();
       }
-
-      // router navigation is now handled by NextAuth directly
     } catch (error: any) {
-      console.error("Registration error:", error);
-      toast.error(error.message || "Something went wrong. Please try again.");
+      setError(error.message || "Something went wrong");
+      toast.error(error.message || "Something went wrong");
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSocialLogin = async (provider: string) => {
-    setIsLoading(true);
-    try {
-      await signIn(provider, { callbackUrl: "/dashboard" });
-    } catch (error) {
-      console.error(`${provider} login error:`, error);
-      toast.error("Something went wrong with social login. Please try again.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-primary">
-            TrialGuard
-          </h1>
-          <h2 className="mt-6 text-2xl font-bold tracking-tight">
-            Create an account
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign up to start managing your subscriptions
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert className="h-8 w-8 text-primary" />
+            <span className="font-bold text-2xl">TrialGuard</span>
+          </div>
+          <h2 className="text-3xl font-bold text-center">Create an account</h2>
+          <p className="mt-2 text-center text-muted-foreground">
+            Start tracking your subscriptions today
           </p>
         </div>
 
-        <div className="mt-8 space-y-6">
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleSocialLogin("google")}
-              disabled={isLoading}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleSocialLogin("github")}
-              disabled={isLoading}
-            >
-              <Github className="mr-2 h-4 w-4" />
-              Continue with GitHub
-            </Button>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Sign Up</CardTitle>
+            <CardDescription>
+              Enter your information to create an account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="John Doe"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="terms"
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) =>
+                    setAcceptTerms(checked as boolean)
+                  }
+                  required
+                />
+                <Label htmlFor="terms" className="text-sm font-normal">
+                  I accept the{" "}
+                  <Link href="/terms" className="text-primary hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    className="text-primary hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="terms"
-                checked={acceptTerms}
-                onCheckedChange={(checked) => setAcceptTerms(checked === true)}
-              />
-              <label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isLoading ||
+                  !name ||
+                  !email ||
+                  !password ||
+                  !confirmPassword ||
+                  !acceptTerms
+                }
               >
-                I accept the{" "}
-                <Link href="/terms" className="text-primary hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create account"}
-            </Button>
-          </form>
-        </div>
-
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-primary hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
+                {isLoading ? "Creating account..." : "Create Account"}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

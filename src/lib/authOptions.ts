@@ -13,14 +13,29 @@ const prisma = new PrismaClient();
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID as string,
-      clientSecret: process.env.GITHUB_SECRET as string,
-    }),
+    // Only add Google provider if credentials are valid
+    ...(process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_CLIENT_ID !== "placeholder"
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    // Only add GitHub provider if credentials are valid
+    ...(process.env.GITHUB_ID &&
+    process.env.GITHUB_SECRET &&
+    process.env.GITHUB_ID !== "placeholder"
+      ? [
+          GithubProvider({
+            clientId: process.env.GITHUB_ID,
+            clientSecret: process.env.GITHUB_SECRET,
+          }),
+        ]
+      : []),
+    // Always include credentials provider
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -32,30 +47,35 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          });
 
-        if (!user || !user.password) {
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const isPasswordMatch = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordMatch) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
           return null;
         }
-
-        const isPasswordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordMatch) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        };
       },
     }),
   ],
@@ -87,10 +107,24 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
+      // Handle specific redirect after login
+      if (
+        url.includes("/api/auth/signin") ||
+        url === "/api/auth/callback/credentials"
+      ) {
+        return `${baseUrl}/dashboard`;
+      }
+
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
+      else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+
       return baseUrl;
     },
   },

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,11 +29,13 @@ export default function SignupPage() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setDebugInfo(null);
 
     // Validation
     if (!name || !email || !password || !confirmPassword) {
@@ -57,6 +58,7 @@ export default function SignupPage() {
       return;
     }
 
+    console.log("[SIGNUP] Attempting to register user with email:", email);
     setIsLoading(true);
 
     try {
@@ -73,32 +75,44 @@ export default function SignupPage() {
         }),
       });
 
-      const data = await response.json();
+      console.log("[SIGNUP] Registration response status:", response.status);
+
+      // Try to parse the response, but handle if it's not valid JSON
+      let data;
+      try {
+        data = await response.json();
+        console.log("[SIGNUP] Registration response data:", {
+          success: data.success,
+          message: data.message,
+          error: data.error,
+        });
+      } catch (err) {
+        console.error("[SIGNUP] Failed to parse response as JSON:", err);
+        setDebugInfo(
+          `Failed to parse response: ${err.message}. Status: ${response.status}`
+        );
+        throw new Error("Server returned an invalid response");
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.error || "Registration failed");
       }
 
+      console.log(
+        "[SIGNUP] Registration successful, redirecting to login page"
+      );
       toast.success("Account created successfully!");
 
-      // Log in the user automatically
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        // If login fails after registration, redirect to login page
-        toast.info("Please sign in with your new account");
-        router.push(`/login?email=${encodeURIComponent(email)}`);
-      } else {
-        // If login succeeds, redirect to dashboard
-        router.push("/dashboard");
-        router.refresh();
-      }
+      // Redirect to login page
+      router.push(
+        `/login?email=${encodeURIComponent(email)}&registrationSuccess=true`
+      );
     } catch (error: any) {
+      console.error("[SIGNUP] Registration error:", error);
       setError(error.message || "Something went wrong");
+      setDebugInfo(
+        `${error.message}\n\nStack: ${error.stack || "No stack trace"}`
+      );
       toast.error(error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
@@ -120,9 +134,26 @@ export default function SignupPage() {
         </div>
 
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {process.env.NODE_ENV === "development" && debugInfo && (
+          <Alert
+            variant="default"
+            className="mb-4 border-yellow-500 bg-yellow-50 text-yellow-700"
+          >
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription>
+              <details>
+                <summary>Debug Info</summary>
+                <pre className="mt-2 text-xs overflow-auto max-h-40">
+                  {debugInfo}
+                </pre>
+              </details>
+            </AlertDescription>
           </Alert>
         )}
 
@@ -143,6 +174,7 @@ export default function SignupPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  autoFocus
                 />
               </div>
 
@@ -168,6 +200,10 @@ export default function SignupPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 8 characters with at least one
+                  uppercase letter, one lowercase letter, and one number
+                </p>
               </div>
 
               <div className="space-y-2">

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       : 0;
 
     // Construct dashboard URL
-    const dashboardUrl = `${process.env.APP_URL}/dashboard`;
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
 
     // Send appropriate email based on notification type
     let emailSent = false;

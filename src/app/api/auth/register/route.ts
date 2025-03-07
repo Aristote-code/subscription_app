@@ -33,18 +33,34 @@ const registerSchema = z.object({
  * POST handler for user registration
  */
 export async function POST(request: NextRequest) {
+  console.log("[REGISTER] Registration request received");
   try {
     // Parse and validate request body
-    const body = await request.json();
+    const body = await request.json().catch((error) => {
+      console.error("[REGISTER] Failed to parse request body:", error);
+      return null;
+    });
+
+    if (!body) {
+      console.error(
+        "[REGISTER] Invalid request body: body is null or undefined"
+      );
+      return NextResponse.json(
+        { success: false, error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    console.log("[REGISTER] Validating request data", { email: body.email });
     const validationResult = registerSchema.safeParse(body);
 
     // Return validation errors if any
     if (!validationResult.success) {
       const { errors } = validationResult.error;
+      const errorMessage = errors[0].message || "Invalid input";
+      console.error("[REGISTER] Validation error:", errorMessage);
       return NextResponse.json(
-        {
-          error: errors[0].message || "Invalid input",
-        },
+        { success: false, error: errorMessage },
         { status: 400 }
       );
     }
@@ -59,11 +75,14 @@ export async function POST(request: NextRequest) {
 
     // If trying to create a non-USER role, check if requester is admin
     if (role !== USER_ROLES.USER) {
+      console.log("[REGISTER] Checking admin permissions for elevated role");
       const isUserAdmin = await isAdmin();
 
       if (!isUserAdmin && !adminCreated) {
+        console.error("[REGISTER] Non-admin tried to create elevated role");
         return NextResponse.json(
           {
+            success: false,
             error: "Only admins can create users with elevated roles",
           },
           { status: 403 }
@@ -72,24 +91,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user with email already exists
+    console.log("[REGISTER] Checking if email already exists:", email);
     const existingUser = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
     });
 
     if (existingUser) {
+      console.error("[REGISTER] User with email already exists:", email);
       return NextResponse.json(
-        {
-          error: "User with this email already exists",
-        },
+        { success: false, error: "User with this email already exists" },
         { status: 409 }
       );
     }
 
     // Hash password
+    console.log("[REGISTER] Hashing password");
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create new user
+    console.log("[REGISTER] Creating new user");
     const user = await prisma.user.create({
       data: {
         name,
@@ -106,17 +127,28 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log("[REGISTER] User created successfully:", {
+      id: user.id,
+      email: user.email,
+    });
     return NextResponse.json({
       success: true,
       message: "User registered successfully",
       user,
     });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("[REGISTER] Registration error:", error);
+
+    // Handle Prisma-specific errors
+    if (error.code === "P2002" && error.meta?.target?.includes("email")) {
+      return NextResponse.json(
+        { success: false, error: "User with this email already exists" },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      {
-        error: "Failed to register user",
-      },
+      { success: false, error: "Failed to register user" },
       { status: 500 }
     );
   }

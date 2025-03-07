@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,20 +27,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const urlError = searchParams.get("error") || "";
+  const registrationSuccess =
+    searchParams.get("registrationSuccess") === "true";
+  const emailFromParams = searchParams.get("email") || "";
+
+  // Pre-fill email from URL parameters
+  useEffect(() => {
+    if (emailFromParams) {
+      setEmail(emailFromParams);
+      console.log(
+        "[LOGIN] Pre-filled email from URL parameter:",
+        emailFromParams
+      );
+    }
+
+    if (registrationSuccess) {
+      setSuccessMessage(
+        "Your account has been created successfully! Please log in."
+      );
+      console.log("[LOGIN] Showing registration success message");
+    }
+
+    if (urlError) {
+      console.log("[LOGIN] URL error parameter present:", urlError);
+    }
+  }, [emailFromParams, registrationSuccess, urlError]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
+    setDebugInfo(null);
 
     if (!email || !password) {
       setError("Email and password are required");
       return;
     }
 
+    console.log("[LOGIN] Attempting login for email:", email);
     setIsLoading(true);
 
     try {
@@ -50,16 +80,27 @@ export default function LoginPage() {
         password,
       });
 
+      console.log("[LOGIN] SignIn result:", {
+        ok: result?.ok,
+        error: result?.error,
+        status: result?.status,
+        url: result?.url,
+      });
+
       if (result?.error) {
         setError(result.error);
+        setDebugInfo(`Error status: ${result.status || "unknown"}`);
         toast.error(result.error);
       } else {
         toast.success("Logged in successfully!");
+        console.log("[LOGIN] Login successful, redirecting to:", callbackUrl);
         router.push(callbackUrl);
         router.refresh();
       }
     } catch (error: any) {
+      console.error("[LOGIN] Login error:", error);
       setError(error.message || "Something went wrong");
+      setDebugInfo(`Error: ${JSON.stringify(error, null, 2)}`);
       toast.error(error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
@@ -83,13 +124,42 @@ export default function LoginPage() {
         </div>
 
         {(error || urlError) && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               {error ||
                 (urlError === "CredentialsSignin"
                   ? "Invalid email or password"
+                  : urlError === "SessionRequired"
+                  ? "You need to be signed in to access this page"
                   : "An error occurred")}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {successMessage && (
+          <Alert
+            variant="default"
+            className="mb-4 border-green-500 bg-green-50 text-green-700"
+          >
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        {process.env.NODE_ENV === "development" && debugInfo && (
+          <Alert
+            variant="default"
+            className="mb-4 border-yellow-500 bg-yellow-50 text-yellow-700"
+          >
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription>
+              <details>
+                <summary>Debug Info</summary>
+                <pre className="mt-2 text-xs overflow-auto max-h-40">
+                  {debugInfo}
+                </pre>
+              </details>
             </AlertDescription>
           </Alert>
         )}
@@ -112,6 +182,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoFocus={!emailFromParams}
                 />
               </div>
 
@@ -132,6 +203,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoFocus={!!emailFromParams}
                 />
               </div>
 

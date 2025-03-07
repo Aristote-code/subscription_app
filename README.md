@@ -10,7 +10,7 @@ TrialGuard is a modern web application that helps you track and manage your subs
 - **Cancellation Guidance**: Access step-by-step instructions for cancelling popular services
 - **Community Contributions**: Share and benefit from other users' cancellation experiences
 - **Detailed Subscription View**: Monitor trial progress, view key dates, and edit subscription details
-- **Email Notifications**: Receive email notifications for trial endings and payment reminders via SendGrid
+- **Email Notifications**: Receive email notifications for trial endings and payment reminders via Resend
 
 ## Tech Stack
 
@@ -19,7 +19,7 @@ TrialGuard is a modern web application that helps you track and manage your subs
 - **State Management**: React Hooks
 - **Database**: SQL Server with Prisma ORM
 - **Authentication**: NextAuth.js
-- **Email Service**: SendGrid
+- **Email Service**: Resend
 
 ## Getting Started
 
@@ -28,7 +28,7 @@ TrialGuard is a modern web application that helps you track and manage your subs
 - Node.js 18.x or later
 - SQL Server instance
 - Git
-- SendGrid account (for email notifications)
+- Resend account (for email notifications)
 
 ### Installation
 
@@ -53,11 +53,11 @@ TrialGuard is a modern web application that helps you track and manage your subs
    NEXTAUTH_URL="http://localhost:3000"
    NEXTAUTH_SECRET="your-secret-key"
 
-   # SendGrid Configuration
-   SENDGRID_API_KEY="your_sendgrid_api_key_here"
-   SENDGRID_FROM_EMAIL="your_verified_sender_email@example.com"
+   # Resend Configuration
+   RESEND_API_KEY="your_resend_api_key_here"
+   RESEND_FROM_EMAIL="your_verified_sender_email@example.com"
    NEXT_PUBLIC_CURRENCY_SYMBOL="$"
-   NEXT_PUBLIC_APP_URL="http://localhost:3000"
+   APP_URL="http://localhost:3000"
    ```
 
 4. Initialize the database
@@ -102,7 +102,7 @@ The application provides step-by-step cancellation instructions for popular serv
 
 ### Email Notifications
 
-The application uses SendGrid to send email notifications for:
+The application uses Resend to send email notifications for:
 
 1. **Trial Ending Reminders**: Get notified before your free trials end
 2. **Payment Due Notifications**: Receive reminders about upcoming subscription payments
@@ -112,7 +112,7 @@ To test email notifications, go to Settings > Notifications and use the test ema
 
 ## Documentation
 
-For more detailed information about the SendGrid integration, see [SendGrid Integration Documentation](docs/sendgrid-integration.md).
+For more detailed information about the Resend integration, see [Resend Integration Documentation](docs/resend-integration.md).
 
 ## Contributing
 

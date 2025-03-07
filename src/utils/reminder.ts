@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 
-// Initialize SendGrid with API key
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Interface for reminder data
@@ -98,49 +96,57 @@ const sendReminderEmail = async (reminder: ReminderData): Promise<void> => {
     const { subscription } = reminder;
     const { user } = subscription;
 
-    if (!process.env.SENDGRID_API_KEY) {
-      console.warn("SendGrid API key not set, skipping email send");
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("Resend API key not set, skipping email send");
       return;
     }
 
     const daysRemaining = getDaysRemaining(subscription.trialEndDate);
     const userName = user.name || "there";
 
-    const msg = {
-      to: user.email,
-      from: "notifications@trialguard.com", // Replace with your verified sender
-      subject: `Trial Ending Soon: ${subscription.name}`,
-      text: `Hi ${userName},\n\nYour free trial for ${
-        subscription.name
-      } will end in ${daysRemaining} days on ${formatDate(
-        subscription.trialEndDate
-      )}. After this date, you will be charged $${subscription.cost} ${
-        subscription.billingCycle
-      }.\n\nIf you don't want to continue with this subscription, make sure to cancel before the trial ends.\n\nThanks,\nThe TrialGuard Team`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Trial Ending Soon</h2>
-          <p>Hi ${userName},</p>
-          <p>Your free trial for <strong>${
-            subscription.name
-          }</strong> will end in <strong>${daysRemaining} days</strong> on ${formatDate(
-        subscription.trialEndDate
-      )}.</p>
-          <p>After this date, you will be charged <strong>$${
-            subscription.cost
-          } ${subscription.billingCycle}</strong>.</p>
-          <p>If you don't want to continue with this subscription, make sure to cancel before the trial ends.</p>
-          <div style="margin: 30px 0;">
-            <a href="${
-              process.env.NEXTAUTH_URL
-            }/dashboard" style="background-color: #0f172a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Subscription</a>
-          </div>
-          <p>Thanks,<br>The TrialGuard Team</p>
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Trial Ending Soon</h2>
+        <p>Hi ${userName},</p>
+        <p>Your free trial for <strong>${
+          subscription.name
+        }</strong> will end in <strong>${daysRemaining} days</strong> on ${formatDate(
+      subscription.trialEndDate
+    )}.</p>
+        <p>After this date, you will be charged <strong>$${subscription.cost} ${
+      subscription.billingCycle
+    }</strong>.</p>
+        <p>If you don't want to continue with this subscription, make sure to cancel before the trial ends.</p>
+        <div style="margin: 30px 0;">
+          <a href="${
+            process.env.NEXTAUTH_URL
+          }/dashboard" style="background-color: #0f172a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Subscription</a>
         </div>
-      `,
-    };
+        <p>Thanks,<br>The TrialGuard Team</p>
+      </div>
+    `;
 
-    await sgMail.send(msg);
+    const textContent = `Hi ${userName},\n\nYour free trial for ${
+      subscription.name
+    } will end in ${daysRemaining} days on ${formatDate(
+      subscription.trialEndDate
+    )}. After this date, you will be charged $${subscription.cost} ${
+      subscription.billingCycle
+    }.\n\nIf you don't want to continue with this subscription, make sure to cancel before the trial ends.\n\nThanks,\nThe TrialGuard Team`;
+
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "notifications@trialguard.com",
+      to: user.email,
+      subject: `Trial Ending Soon: ${subscription.name}`,
+      html: htmlContent,
+      text: textContent,
+    });
+
+    if (error) {
+      console.error("Error sending email with Resend:", error);
+      throw error;
+    }
+
     console.log(
       `Reminder email sent for ${subscription.name} to ${user.email}`
     );

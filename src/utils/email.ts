@@ -1,9 +1,7 @@
-import sgMail from "@sendgrid/mail";
+import { Resend } from "resend";
 
-// Initialize SendGrid with API key
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Resend with API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Email template types
@@ -70,7 +68,7 @@ function replaceTemplateVariables(
 }
 
 /**
- * Send an email using SendGrid
+ * Send an email using Resend
  */
 export async function sendEmail({
   to,
@@ -82,8 +80,8 @@ export async function sendEmail({
   variables: Record<string, string>;
 }) {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.error("SendGrid API key is not configured");
+    if (!process.env.RESEND_API_KEY) {
+      console.error("Resend API key is not configured");
       return false;
     }
 
@@ -93,15 +91,23 @@ export async function sendEmail({
       return false;
     }
 
-    const msg = {
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL || "noreply@trialguard.com",
-      subject: replaceTemplateVariables(emailTemplate.subject, variables),
-      text: replaceTemplateVariables(emailTemplate.text, variables),
-      html: replaceTemplateVariables(emailTemplate.html, variables),
-    };
+    const subject = replaceTemplateVariables(emailTemplate.subject, variables);
+    const html = replaceTemplateVariables(emailTemplate.html, variables);
+    const text = replaceTemplateVariables(emailTemplate.text, variables);
 
-    await sgMail.send(msg);
+    const { data, error } = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "notifications@trialguard.com",
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error("Error sending email with Resend:", error);
+      return false;
+    }
+
     return true;
   } catch (error) {
     console.error("Error sending email:", error);

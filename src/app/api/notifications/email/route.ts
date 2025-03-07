@@ -9,7 +9,7 @@ import {
 
 /**
  * POST /api/notifications/email
- * Send an email notification
+ * Send an email notification using Resend
  */
 export async function POST(request: NextRequest) {
   try {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       : 0;
 
     // Construct dashboard URL
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`;
+    const dashboardUrl = `${process.env.APP_URL}/dashboard`;
 
     // Send appropriate email based on notification type
     let emailSent = false;

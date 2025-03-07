@@ -1,10 +1,10 @@
-# SendGrid Email Integration
+# Resend Email Integration
 
-This document explains how the SendGrid email integration is set up in the TrialGuard application.
+This document explains how the Resend email integration is set up in the TrialGuard application.
 
 ## Overview
 
-The application uses SendGrid to send transactional emails for:
+The application uses Resend to send transactional emails for:
 
 - Trial ending notifications
 - Payment due reminders
@@ -12,24 +12,24 @@ The application uses SendGrid to send transactional emails for:
 
 ## Setup Instructions
 
-1. **Create a SendGrid Account**
+1. **Create a Resend Account**
 
-   - Sign up at [SendGrid](https://sendgrid.com/)
-   - Create an API key with "Mail Send" permissions
+   - Sign up at [Resend](https://resend.com/)
+   - Create an API key with appropriate permissions
 
-2. **Verify Sender Identity**
+2. **Verify a Sending Domain**
 
-   - In SendGrid, navigate to Settings > Sender Authentication
-   - Complete either domain authentication or single sender verification
-   - The verified email must match what you use in SENDGRID_FROM_EMAIL
+   - In Resend, navigate to Domains section
+   - Add and verify your domain
+   - The verified domain must be used in the "from" email address
 
 3. **Set Environment Variables**
    Add the following to your `.env` or `.env.local` file:
    ```
-   SENDGRID_API_KEY="your_sendgrid_api_key_here"
-   SENDGRID_FROM_EMAIL="your_verified_sender_email@example.com"
+   RESEND_API_KEY="your_resend_api_key_here"
+   RESEND_FROM_EMAIL="your_verified_sender_email@example.com"
    NEXT_PUBLIC_CURRENCY_SYMBOL="$"
-   NEXT_PUBLIC_APP_URL="http://localhost:3000"
+   APP_URL="http://localhost:3000"
    ```
 
 ## Using the Email Service
@@ -125,6 +125,6 @@ const EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
 
 ## Monitoring and Debugging
 
-- Check SendGrid dashboard for delivery stats and issues
+- Check Resend dashboard for delivery stats and issues
 - The application logs errors when sending emails fails
-- For local testing, check that SendGrid API key is valid and sender email is verified
+- For local testing, check that Resend API key is valid and sender email is verified

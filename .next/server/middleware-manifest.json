@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/cancellation-guide/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/cancellation-guide/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/cancellation-guide/route.js"
+      ],
+      "name": "app/api/cancellation-guide/route",
+      "page": "/api/cancellation-guide/route",
+      "matchers": [
+        {
+          "regexp": "^/api/cancellation\\-guide$",
+          "originalSource": "/api/cancellation-guide"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "uL/hWL6eLAuTSonpgZfoWPLwgZ7o/JywlawTF/xfUU0="
+      }
+    }
+  },
+  "sortedMiddleware": []
+}

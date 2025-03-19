@@ -1,123 +1,69 @@
-# TrialGuard - Subscription Management App
+# Welcome to your Lovable project
 
-TrialGuard is a modern web application that helps you track and manage your subscription trials and ongoing subscriptions to prevent unexpected charges. Never forget to cancel a free trial again!
+## Project info
 
-## Features
+**URL**: https://lovable.dev/projects/e6dfe443-e2a6-4728-a0a2-be7789b964dd
 
-- **Track Subscriptions**: Keep all your trial periods and recurring subscriptions in one place
-- **Visual Status Indicators**: Quickly identify active, ending soon, and expired subscriptions
-- **Smart Reminders**: Get notified before your free trials end
-- **Cancellation Guidance**: Access step-by-step instructions for cancelling popular services
-- **Community Contributions**: Share and benefit from other users' cancellation experiences
-- **Detailed Subscription View**: Monitor trial progress, view key dates, and edit subscription details
-- **Email Notifications**: Receive email notifications for trial endings and payment reminders via Resend
+## How can I edit this code?
 
-## Tech Stack
+There are several ways of editing your application.
 
-- **Frontend**: Next.js 14+ with React and TypeScript
-- **UI Components**: Shadcn UI library with Tailwind CSS
-- **State Management**: React Hooks
-- **Database**: SQL Server with Prisma ORM
-- **Authentication**: NextAuth.js
-- **Email Service**: Resend
+**Use Lovable**
 
-## Getting Started
+Simply visit the [Lovable Project](https://lovable.dev/projects/e6dfe443-e2a6-4728-a0a2-be7789b964dd) and start prompting.
 
-### Prerequisites
+Changes made via Lovable will be committed automatically to this repo.
 
-- Node.js 18.x or later
-- SQL Server instance
-- Git
-- Resend account (for email notifications)
+**Use your preferred IDE**
 
-### Installation
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-1. Clone the repository
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-   ```
-   git clone https://github.com/yourusername/trialguard.git
-   cd trialguard
-   ```
+Follow these steps:
 
-2. Install dependencies
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-   ```
-   npm install
-   ```
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
 
-3. Configure environment variables
-   Create a `.env` file in the root directory with the following:
+# Step 3: Install the necessary dependencies.
+npm i
 
-   ```
-   DATABASE_URL="sqlserver://localhost:1433;database=trialguard;user=sa;password=YourStrong@Passw0rd;trustServerCertificate=true"
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secret-key"
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
 
-   # Resend Configuration
-   RESEND_API_KEY="your_resend_api_key_here"
-   RESEND_FROM_EMAIL="your_verified_sender_email@example.com"
-   NEXT_PUBLIC_CURRENCY_SYMBOL="$"
-   APP_URL="http://localhost:3000"
-   ```
+**Edit a file directly in GitHub**
 
-4. Initialize the database
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-   ```
-   npx prisma migrate dev --name init
-   ```
+**Use GitHub Codespaces**
 
-5. Start the development server
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
-   ```
-   npm run dev
-   ```
+## What technologies are used for this project?
 
-6. Open your browser and navigate to `http://localhost:3000`
+This project is built with .
 
-## Usage
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
-### Adding a Subscription
+## How can I deploy this project?
 
-1. Click the "Add Subscription" button
-2. Select a service or enter a custom service name
-3. Set the trial start date and either:
-   - Specify the trial length in days, or
-   - Set the end date directly
-4. Set when you want to be reminded before the trial ends
-5. Click "Add Subscription"
+Simply open [Lovable](https://lovable.dev/projects/e6dfe443-e2a6-4728-a0a2-be7789b964dd) and click on Share -> Publish.
 
-### Managing Subscriptions
+## I want to use a custom domain - is that possible?
 
-- **View Details**: Click on any subscription row to view detailed information
-- **Edit Subscription**: Within the details view, click "Edit" to modify subscription information
-- **Delete Subscription**: Remove subscriptions you no longer want to track
-- **Sort and Filter**: Organize your subscriptions by service name, end date, or status
-
-### Cancellation Guide
-
-The application provides step-by-step cancellation instructions for popular services. For other services:
-
-1. Search for cancellation steps
-2. Contribute your own cancellation instructions to help other users
-
-### Email Notifications
-
-The application uses Resend to send email notifications for:
-
-1. **Trial Ending Reminders**: Get notified before your free trials end
-2. **Payment Due Notifications**: Receive reminders about upcoming subscription payments
-3. **Subscription Cancellation Confirmations**: Get confirmation when you cancel a subscription
-
-To test email notifications, go to Settings > Notifications and use the test email feature.
-
-## Documentation
-
-For more detailed information about the Resend integration, see [Resend Integration Documentation](docs/resend-integration.md).
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
